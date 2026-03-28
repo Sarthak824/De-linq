@@ -152,6 +152,7 @@ export default function CustomerDetail() {
     { subject: 'Credit Buffer', value: Math.max(0, 100 - data.creditUtil) }
   ];
 
+
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8 pb-12">
       
@@ -306,6 +307,48 @@ export default function CustomerDetail() {
               </div>
             </div>
           </div>
+
+          {/* Credit Exposure Card */}
+          <div className="bg-slate-900/40 backdrop-blur-md rounded-3xl border border-white/5 p-6 flex flex-col min-h-[300px]">
+            <h3 className="text-xs uppercase tracking-widest text-slate-400 font-bold w-full text-left mb-6 flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-indigo-400" /> Credit Exposure & Debt
+            </h3>
+            <div className="space-y-6 flex-1 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-black text-white">{data.exposureLevel} Exposure</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Classification Level</p>
+                </div>
+                <div className="w-16 h-16 relative">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#818cf8" strokeWidth="8" strokeDasharray="251" strokeDashoffset={251 - (data.exposureScore / 100) * 251} strokeLinecap="round" />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-indigo-300">
+                    {Math.round(data.exposureScore)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
+                <p className="text-xs text-indigo-300 leading-relaxed font-medium italic">
+                  "{data.exposureMessage}"
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-auto">
+                <div className="bg-slate-800/40 p-3 rounded-xl border border-white/5">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Structure</p>
+                  <p className="text-sm font-bold text-slate-200">{data.debtStructure}</p>
+                </div>
+                <div className="bg-slate-800/40 p-3 rounded-xl border border-white/5 overflow-hidden">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Loans</p>
+                  <p className={`text-[11px] font-bold text-slate-300 truncate`}>{data.activeLoanSummary}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           
           {/* Radar Profile */}
           <div className="bg-slate-900/40 backdrop-blur-md rounded-3xl border border-white/5 p-6 flex flex-col items-center">
@@ -387,29 +430,6 @@ export default function CustomerDetail() {
             </div>
           </div>
 
-          {/* Pie Chart */}
-          <div className="bg-slate-900/40 backdrop-blur-md rounded-3xl border border-white/5 p-6">
-            <h3 className="text-xs uppercase tracking-widest text-slate-400 font-bold w-full text-left mb-2">Liquidity Distribution</h3>
-            <div className="w-full h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={[
-                    { name: 'EMI Obligations', value: data.emi, color: '#f59e0b' },
-                    { name: 'Credit Card Due', value: data.creditDue, color: '#f43f5e' },
-                    { name: 'Liquid Cash', value: remainingIncome > 0 ? remainingIncome : 0, color: '#10b981' },
-                  ]} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value" stroke="none">
-                    {[0,1,2].map((i) => <Cell key={i} fill={['#f59e0b', '#f43f5e', '#10b981'][i]} />)}
-                  </Pie>
-                  <RechartsTooltip formatter={(v) => `₹${v.toLocaleString()}`} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex justify-center flex-wrap gap-4 mt-4 text-[11px] font-bold tracking-wider uppercase text-slate-400">
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> EMI</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500" /> Credit</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Liquid</span>
-            </div>
-          </div>
 
         </motion.div>
       )}
