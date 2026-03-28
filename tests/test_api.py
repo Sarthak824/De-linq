@@ -64,6 +64,8 @@ class ApiTests(unittest.TestCase):
             "policy_action": "emi_restructure_review",
             "policy_priority": "critical",
             "recommended_channel": "WhatsApp",
+            "shock_severity": "High",
+            "shock_signals": ["Job loss detected", "Sharp balance decline"],
         }
 
         with patch("src.api.app.load_model", return_value=SimpleNamespace(feature_importances_=[0.1] * 24)):
@@ -73,6 +75,7 @@ class ApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["risk_band"], "High")
+        self.assertEqual(response.json()["shock_severity"], "High")
         self.assertEqual(response.json()["recommended_intervention"], "Offer EMI restructuring")
         mock_score_records.assert_called_once()
 

@@ -2,6 +2,7 @@ import unittest
 
 import pandas as pd
 
+from src.intelligence.black_swan_engine import analyze_black_swan_event
 from src.models.combined_risk import combine_risk_scores
 from src.interventions.recommend import recommend_intervention
 from src.persona.persona_builder import build_persona, generate_personas
@@ -59,6 +60,23 @@ class PersonaPipelineTests(unittest.TestCase):
 
         self.assertEqual(combined_score, 0.8)
         self.assertEqual(source, "xgboost_only")
+
+    def test_black_swan_engine_detects_high_severity_event(self):
+        shock = analyze_black_swan_event(
+            sample_row(
+                job_loss=1,
+                balance_drop_ratio=0.58,
+                atm_withdrawals=14,
+                avg_balance=3200,
+                spending_change=0.41,
+                risk_score=0.62,
+            )
+        )
+
+        self.assertEqual(shock["shock_severity"], "High")
+        self.assertEqual(shock["shock_flag"], 1)
+        self.assertGreaterEqual(shock["risk_score_after_shock"], 0.9)
+        self.assertIn("Job loss detected", shock["shock_signals"])
 
     def test_build_persona_assigns_declining_gig_worker(self):
         persona = build_persona(sample_row())
@@ -162,6 +180,28 @@ class PersonaPipelineTests(unittest.TestCase):
         self.assertEqual(row["policy_action"], "flexible_payment_window")
         self.assertEqual(row["recommended_channel"], "App")
         self.assertEqual(recommendation, "Offer flexible payment window")
+
+    def test_policy_and_intervention_for_high_shock(self):
+        df = pd.DataFrame(
+            [
+                {
+                    "customer_id": "CUST_TEST_004",
+                    "risk_band": "High",
+                    "intent_label": "high_distress",
+                    "persona_label": "At-Risk Shocked User",
+                    "financial_stress_level": "High",
+                    "shock_severity": "High",
+                }
+            ]
+        )
+
+        policy_df = apply_policy_engine(df)
+        row = policy_df.iloc[0].to_dict()
+        recommendation = recommend_intervention(row, 0.94)
+
+        self.assertEqual(row["policy_action"], "immediate_support_review")
+        self.assertEqual(row["recommended_channel"], "Call")
+        self.assertEqual(recommendation, "Offer immediate support")
 
 
 if __name__ == "__main__":

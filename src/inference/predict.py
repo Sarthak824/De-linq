@@ -15,6 +15,7 @@ from src.models.combined_risk import combine_risk_scores
 from src.models.model_config import FEATURE_COLUMNS
 from src.policy.decision_engine import apply_policy_engine
 from src.persona.persona_builder import generate_personas
+from src.intelligence.black_swan_engine import batch_analyze_black_swan
 from src.intelligence.exposure_analyzer import analyze_exposure, batch_analyze_exposure
 from src.intelligence.hidden_distress_engine import analyze_hidden_distress, batch_analyze_hidden_distress
 from src.intelligence.liquidity_engine import analyze_liquidity_stress, batch_analyze_liquidity_stress
@@ -26,6 +27,20 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "data", "output")
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "customer_risk_predictions.csv")
 SEQUENCE_SCORES_PATH = os.path.join(OUTPUT_DIR, "customer_sequence_scores.csv")
 LSTM_METADATA_PATH = os.path.join(BASE_DIR, "artifacts", "lstm_metadata.json")
+
+
+def _as_string_list(value):
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return []
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    text = str(value).strip()
+    if not text:
+        return []
+    if text.startswith("[") and text.endswith("]"):
+        text = text[1:-1]
+    parts = [item.strip().strip("'\"") for item in text.split(",")]
+    return [item for item in parts if item]
 
 
 def load_model(model_path=MODEL_PATH):
@@ -102,6 +117,16 @@ def score_customers(df, model):
     output_df["risk_score"] = combined_scores.apply(lambda item: item[0])
     output_df["score_source"] = combined_scores.apply(lambda item: item[1])
 
+    # 2nd Layer: Intelligence Engines (Optimized Batch Processing)
+    output_df = batch_analyze_exposure(output_df)
+    output_df = batch_analyze_hidden_distress(output_df)
+    output_df = batch_analyze_liquidity_stress(output_df)
+    output_df = batch_analyze_black_swan(output_df)
+    output_df["risk_score"] = output_df["risk_score_after_shock"]
+
+    # Intent detection depends on the derived intelligence layers.
+    output_df = detect_intents(output_df)
+
     decisions = output_df.apply(
         lambda row: enrich_customer_decision(row, row["risk_score"]),
         axis=1,
@@ -110,14 +135,6 @@ def score_customers(df, model):
 
     output_df = pd.concat([output_df, decisions], axis=1)
     output_df["top_reason_codes"] = output_df["top_reason_codes"].apply(lambda items: ", ".join(items))
-    
-    # 2nd Layer: Intelligence Engines (Optimized Batch Processing)
-    output_df = batch_analyze_exposure(output_df)
-    output_df = batch_analyze_hidden_distress(output_df)
-    output_df = batch_analyze_liquidity_stress(output_df)
-
-    # Intent detection depends on the derived intelligence layers.
-    output_df = detect_intents(output_df)
 
     # Generate personas AFTER intelligence engines to include behavioral signals
     output_df = generate_personas(output_df)
@@ -142,7 +159,7 @@ def format_prediction_row(row):
         "top_reason_codes": [item.strip() for item in row["top_reason_codes"].split(",")],
         "recommended_intervention": row["recommended_intervention"],
         "persona_label": row.get("persona_label"),
-        "persona_signals": [item.strip() for item in str(row.get("persona_signals", "")).split(",") if item.strip()],
+        "persona_signals": _as_string_list(row.get("persona_signals", "")),
         "financial_stress_level": row.get("financial_stress_level"),
         "intent_label": row.get("intent_label"),
         "policy_action": row.get("policy_action"),
@@ -158,6 +175,10 @@ def format_prediction_row(row):
         "liquidity_pattern": row.get("liquidity_pattern"),
         "patchwork_index": float(row["patchwork_index"]) if pd.notna(row.get("patchwork_index")) else 0.0,
         "emi_buffer_days": int(row["emi_buffer_days"]) if pd.notna(row.get("emi_buffer_days")) else 0,
+        "shock_score": int(row["shock_score"]) if pd.notna(row.get("shock_score")) else 0,
+        "shock_severity": row.get("shock_severity"),
+        "shock_signals": _as_string_list(row.get("shock_signals", "")),
+        "shock_intervention_hint": row.get("shock_intervention_hint"),
         "liquidity_stress_level": row.get("liquidity_stress_level"),
         "liquidity_stress_message": row.get("liquidity_stress_message"),
         "asset_depletion_strategy": row.get("asset_depletion_strategy"),
@@ -222,6 +243,11 @@ def run_batch_inference(input_path=INPUT_PATH, output_path=OUTPUT_PATH, model_pa
         "liquidity_pattern",
         "patchwork_index",
         "emi_buffer_days",
+        "shock_flag",
+        "shock_score",
+        "shock_severity",
+        "shock_signals",
+        "shock_intervention_hint",
         "liquidity_stress_level",
         "liquidity_stress_message",
         "asset_depletion_strategy",

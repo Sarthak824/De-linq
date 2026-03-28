@@ -99,6 +99,11 @@ class PredictionResponse(BaseModel):
     liquidity_pattern: Optional[str] = None
     patchwork_index: Optional[float] = 0.0
     emi_buffer_days: Optional[int] = 0
+    shock_flag: Optional[int] = 0
+    shock_score: Optional[int] = 0
+    shock_severity: Optional[str] = None
+    shock_signals: List[str] = []
+    shock_intervention_hint: Optional[str] = None
     liquidity_stress_level: Optional[str] = None
     liquidity_stress_message: Optional[str] = None
     asset_depletion_strategy: Optional[str] = None
@@ -290,6 +295,11 @@ def _split_customer_payload(record: dict):
         "liquidity_pattern",
         "patchwork_index",
         "emi_buffer_days",
+        "shock_flag",
+        "shock_score",
+        "shock_severity",
+        "shock_signals",
+        "shock_intervention_hint",
         "liquidity_stress_level",
         "liquidity_stress_message",
         "asset_depletion_strategy",
@@ -314,6 +324,8 @@ def _split_customer_payload(record: dict):
         prediction["top_reason_codes"] = [item.strip() for item in prediction["top_reason_codes"].split(",") if item.strip()]
     if "persona_signals" in prediction and isinstance(prediction["persona_signals"], str):
         prediction["persona_signals"] = [item.strip() for item in prediction["persona_signals"].split(",") if item.strip()]
+    if "shock_signals" in prediction and isinstance(prediction["shock_signals"], str):
+        prediction["shock_signals"] = [item.strip() for item in prediction["shock_signals"].split(",") if item.strip()]
 
     return profile, prediction or None
 

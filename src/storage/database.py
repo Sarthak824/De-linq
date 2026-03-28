@@ -83,6 +83,11 @@ PREDICTION_COLUMNS = [
     "liquidity_pattern",
     "patchwork_index",
     "emi_buffer_days",
+    "shock_flag",
+    "shock_score",
+    "shock_severity",
+    "shock_signals",
+    "shock_intervention_hint",
     "liquidity_stress_level",
     "liquidity_stress_message",
     "asset_depletion_strategy",
@@ -201,6 +206,11 @@ def init_database(db_path=None):
                 liquidity_pattern TEXT,
                 patchwork_index REAL,
                 emi_buffer_days INTEGER,
+                shock_flag INTEGER,
+                shock_score INTEGER,
+                shock_severity TEXT,
+                shock_signals TEXT,
+                shock_intervention_hint TEXT,
                 liquidity_stress_level TEXT,
                 liquidity_stress_message TEXT,
                 asset_depletion_strategy TEXT,
@@ -245,6 +255,11 @@ def _ensure_prediction_columns(connection):
     required_columns = {
         "xgb_risk_score": "REAL",
         "score_source": "TEXT",
+        "shock_flag": "INTEGER",
+        "shock_score": "INTEGER",
+        "shock_severity": "TEXT",
+        "shock_signals": "TEXT",
+        "shock_intervention_hint": "TEXT",
     }
     for column_name, column_type in required_columns.items():
         if column_name not in existing_columns:
@@ -258,6 +273,12 @@ def _normalize_columns(df, columns):
     for column in columns:
         if column not in normalized.columns:
             normalized[column] = None
+    for column in normalized.columns:
+        normalized[column] = normalized[column].apply(
+            lambda value: ", ".join(str(item) for item in value)
+            if isinstance(value, list)
+            else value
+        )
     return normalized[columns]
 
 
@@ -300,7 +321,8 @@ def load_customer_predictions(db_path=None):
         return pd.read_sql_query(
             "SELECT customer_id, risk_score, xgb_risk_score, sequence_risk_score, score_source, risk_prediction, risk_band, "
             "top_reason_codes, recommended_intervention, persona_label, persona_signals, "
-            "financial_stress_level, intent_label, policy_action, policy_priority, recommended_channel "
+            "financial_stress_level, intent_label, policy_action, policy_priority, recommended_channel, "
+            "shock_flag, shock_score, shock_severity, shock_signals, shock_intervention_hint "
             "FROM customer_predictions",
             connection,
         )

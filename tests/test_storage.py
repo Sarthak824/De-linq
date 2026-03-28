@@ -65,6 +65,11 @@ class StorageTests(unittest.TestCase):
                         "policy_action": "emi_restructure_review",
                         "policy_priority": "critical",
                         "recommended_channel": "WhatsApp",
+                        "shock_flag": 1,
+                        "shock_score": 3,
+                        "shock_severity": "High",
+                        "shock_signals": "Job loss detected, Sharp balance decline, Withdrawal spike",
+                        "shock_intervention_hint": "Immediate support",
                     }
                 ]
             )
@@ -94,6 +99,7 @@ class StorageTests(unittest.TestCase):
             self.assertEqual(analysis_df.iloc[0]["risk_band"], "High")
             self.assertEqual(analysis_df.iloc[0]["xgb_risk_score"], 0.79)
             self.assertEqual(analysis_df.iloc[0]["score_source"], "combined")
+            self.assertEqual(analysis_df.iloc[0]["shock_severity"], "High")
             self.assertEqual(len(history_df), 1)
             self.assertEqual(history_df.iloc[0]["delivery_status"], "sent")
 

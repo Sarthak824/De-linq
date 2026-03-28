@@ -39,6 +39,10 @@ def recommend_intervention(row, risk_score):
 
     if policy_action == "gentle_reminder" or policy_action == "payment_reminder":
         return "Send payment reminder"
+    if policy_action == "immediate_support_review":
+        return "Offer immediate support"
+    if policy_action == "flexible_payment_review":
+        return "Offer flexible payment plan"
     if policy_action == "flexible_payment_window":
         return "Offer flexible payment window"
     if policy_action == "dynamic_emi_review":

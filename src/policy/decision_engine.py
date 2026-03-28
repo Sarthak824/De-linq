@@ -3,6 +3,20 @@ def select_policy_decision(row):
     intent_label = row.get("intent_label", "stable")
     persona_label = row.get("persona_label", "Moderate User")
     financial_stress_level = row.get("financial_stress_level", "Moderate")
+    shock_severity = row.get("shock_severity", "None")
+
+    if shock_severity == "High":
+        return {
+            "policy_action": "immediate_support_review",
+            "policy_priority": "critical",
+            "recommended_channel": "Call",
+        }
+    if shock_severity == "Moderate":
+        return {
+            "policy_action": "flexible_payment_review",
+            "policy_priority": "high",
+            "recommended_channel": "WhatsApp",
+        }
 
     if persona_label == "Stable Gig Worker":
         return {

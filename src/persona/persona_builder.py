@@ -154,6 +154,21 @@ def extract_signals(row):
         signals.append("Acute hidden distress detected")
     elif row.get("liquidity_pattern") == "P2P-Heavy":
         signals.append("Frequent P2P inflows detected")
+
+    shock_severity = row.get("shock_severity")
+    if shock_severity == "High":
+        signals.append("Black swan shock event detected")
+    elif shock_severity == "Moderate":
+        signals.append("Moderate shock event detected")
+    elif shock_severity == "Low":
+        signals.append("Emerging shock signal detected")
+
+    shock_signals = row.get("shock_signals", [])
+    if isinstance(shock_signals, str):
+        shock_signals = [item.strip() for item in shock_signals.split(",") if item.strip()]
+    for signal in shock_signals:
+        if signal and signal != "No shock" and signal not in signals:
+            signals.append(signal)
         
     liq_level = row.get("liquidity_stress_level")
     if liq_level == "Critical":
@@ -169,6 +184,11 @@ def assign_persona(row):
     credit = row.get("credit_dependency_level", "Moderate")
     spending = row.get("spending_behavior", "Stable Spender")
     risk = row.get("risk_level", "Moderate")
+
+    if row.get("shock_severity") == "High":
+        return "At-Risk Shocked User"
+    if row.get("shock_severity") == "Moderate":
+        return "Potentially Distressed User"
 
     if is_gig_worker(row):
         trend = row.get("spending_change", 0)
