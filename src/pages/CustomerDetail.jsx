@@ -256,15 +256,59 @@ export default function CustomerDetail() {
             <div className="w-full h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={[
-                  { name: 'Credit Util', value: data.creditUtil, color: '#f43f5e' },
-                  { name: 'EMI Burden', value: data.emiRatio, color: '#f59e0b' },
-                  { name: 'Debt Stress', value: data.debtStress, color: '#8b5cf6' }
-                ]} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
+                  { name: 'Credit Util', value: data.creditUtil, color: '#f43f5e', grad: 'url(#grad-red)' },
+                  { name: 'EMI Burden', value: data.emiRatio, color: '#38BDF8', grad: 'url(#grad-cyan)' },
+                  { name: 'Debt Stress', value: data.debtStress, color: '#A78BFA', grad: 'url(#grad-purple)' }
+                ]} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="grad-red" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#f43fb0" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="#f43f5e" stopOpacity={1} />
+                    </linearGradient>
+                    <linearGradient id="grad-cyan" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="#0ea5e9" stopOpacity={1} />
+                    </linearGradient>
+                    <linearGradient id="grad-purple" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={1} />
+                    </linearGradient>
+                    <filter id="glow">
+                      <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                      <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
                   <XAxis type="number" domain={[0, 100]} hide />
-                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} width={80} />
-                  <RechartsTooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px' }} />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
-                    {data.reasons.map((_, i) => <Cell key={i} fill={['#f43f5e', '#f59e0b', '#8b5cf6'][i%3]} /> )}
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#CBD5F5', fontSize: 13, fontWeight: 600 }} 
+                    width={100} 
+                  />
+                  <RechartsTooltip 
+                    cursor={{ fill: 'rgba(255,255,255,0.03)' }} 
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }} 
+                    itemStyle={{ color: '#E2E8F0', fontSize: '12px', fontWeight: 'bold' } }
+                  />
+                  <Bar 
+                    dataKey="value" 
+                    radius={[0, 6, 6, 0]} 
+                    barSize={24}
+                    animationDuration={1500}
+                    animationEasing="ease-out"
+                  >
+                    { [
+                      { grad: 'url(#grad-red)' },
+                      { grad: 'url(#grad-cyan)' },
+                      { grad: 'url(#grad-purple)' }
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.grad} style={{ filter: 'url(#glow)' }} />
+                    ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
