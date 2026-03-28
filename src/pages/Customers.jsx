@@ -284,7 +284,7 @@ export default function Customers() {
                   <tr key={row.customer_id} className="hover:bg-slate-800/40 transition-colors cursor-default whitespace-nowrap">
                     {/* Customer Profile */}
                     <td className="px-4 py-3 text-sm font-mono border-r border-white/5">
-                      <Link to={`/customers/${row.customer_id}`} className="text-cyan-400 hover:text-cyan-300 hover:underline transition-colors">
+                      <Link to={`/customer/${row.customer_id}`} className="text-cyan-400 hover:text-cyan-300 hover:underline transition-colors">
                         {row.customer_id}
                       </Link>
                     </td>

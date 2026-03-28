@@ -1,4 +1,8 @@
+import { useNavigate } from "react-router-dom";
+
 export default function RiskTable({ customers }) {
+  const navigate = useNavigate();
+
   return (
     <div className="bg-slate-900/50 backdrop-blur-md border border-slate-700/50 rounded-2xl flex flex-col overflow-hidden">
       <div className="p-6 border-b border-slate-700/50">
@@ -8,7 +12,7 @@ export default function RiskTable({ customers }) {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-800/30 text-slate-400 text-sm border-b border-slate-700/50">
-              <th className="px-6 py-4 font-medium">Name</th>
+              <th className="px-6 py-4 font-medium">Customer ID</th>
               <th className="px-6 py-4 font-medium">Risk Score</th>
               <th className="px-6 py-4 font-medium">Risk Category</th>
               <th className="px-6 py-4 font-medium">Key Driver</th>
@@ -18,8 +22,14 @@ export default function RiskTable({ customers }) {
           </thead>
           <tbody className="divide-y divide-slate-700/50 text-sm">
             {customers.map((c, i) => (
-              <tr key={i} className="hover:bg-slate-800/30 transition-colors">
-                <td className="px-6 py-4 text-white font-medium">{c.name}</td>
+              <tr 
+                key={i} 
+                className="hover:bg-slate-800/30 transition-colors cursor-pointer group"
+                onClick={() => navigate(`/customer/${c.id}`)}
+              >
+                <td className="px-6 py-4 text-cyan-400 font-mono font-medium tracking-wider group-hover:text-cyan-300 transition-colors">
+                  {c.id}
+                </td>
                 <td className="px-6 py-4">
                   <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                     c.riskScore > 80 ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :

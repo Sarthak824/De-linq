@@ -1,4 +1,4 @@
-import { Users, AlertTriangle, TrendingUp, Activity } from "lucide-react";
+import { Users, AlertTriangle, Activity } from "lucide-react";
 import KPICard from "../components/dashboard/KPICard";
 import FinancialStressChart from "./FinancialStressChart";
 import RiskTable from "../components/dashboard/RiskTable";
@@ -8,26 +8,24 @@ import AIInsights from "../components/dashboard/AIInsights";
 const mockKPIs = {
   totalCustomers: "124,592",
   atRisk: "12,430",
-  recoveryRate: "68.4%",
   avgRisk: 68, // new ML-based probability percentage
 };
 
 const mockChartData = {
   dates: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
   stressLevels: [45, 52, 48, 65, 70, 68, 85],
-  recoveryRates: [72, 70, 71, 68, 65, 66, 62],
 };
 
 const mockRiskCustomers = [
-  { name: "Rahul Sharma", riskScore: 92, category: "High", keyDriver: "High EMI burden", lastActivity: "2 mins ago", action: "Review Credit" },
-  { name: "Priya Desai", riskScore: 85, category: "High", keyDriver: "Frequent late payments", lastActivity: "1 hour ago", action: "Initiate Restructure" },
-  { name: "Amit Kumar", riskScore: 78, category: "Medium", keyDriver: "Salary delay detected", lastActivity: "3 hours ago", action: "Send EMI Reminder" },
-  { name: "Neha Gupta", riskScore: 88, category: "High", keyDriver: "Spending spike", lastActivity: "5 hours ago", action: "Schedule Call" },
+  { id: "CUST-101000", riskScore: 92, category: "High", keyDriver: "High EMI burden", lastActivity: "2 mins ago", action: "Review Credit" },
+  { id: "CUST-101001", riskScore: 85, category: "High", keyDriver: "Frequent late payments", lastActivity: "1 hour ago", action: "Initiate Restructure" },
+  { id: "CUST-101002", riskScore: 78, category: "Medium", keyDriver: "Salary delay detected", lastActivity: "3 hours ago", action: "Send EMI Reminder" },
+  { id: "CUST-101003", riskScore: 88, category: "High", keyDriver: "Spending spike", lastActivity: "5 hours ago", action: "Schedule Call" },
 ];
 
 const mockInsights = [
   { type: "alert", message: "Spike in EMI defaults in salaried segment observed across Tier 2 cities.", time: "1 hour ago" },
-  { type: "trend", message: "Recovery rate improved by 4.2% following the new automated SMS campaign.", time: "3 hours ago" },
+  { type: "trend", message: "Customer intervention success rate improved by 4.2% following the new automated SMS campaign.", time: "3 hours ago" },
   { type: "info", message: "145 customers are eligible for the pre-approved restructuring scheme.", time: "5 hours ago" },
   { type: "alert", message: "High variance in credit utilization for 500+ unverified accounts.", time: "6 hours ago" },
   { type: "trend", message: "Overall risk prediction accuracy increased by 1.8% in the latest model retrain.", time: "12 hours ago" },
@@ -53,7 +51,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <KPICard 
           title="Total Customers" 
           value={mockKPIs.totalCustomers} 
@@ -68,13 +66,6 @@ export default function Dashboard() {
           trendLabel="vs last month" 
           icon={AlertTriangle} 
           trendUpIsGood={false}
-        />
-        <KPICard 
-          title="Recovery Rate" 
-          value={mockKPIs.recoveryRate} 
-          trend={4.2} 
-          trendLabel="vs last month" 
-          icon={TrendingUp} 
         />
         <KPICard 
           title="Average Risk Score" 

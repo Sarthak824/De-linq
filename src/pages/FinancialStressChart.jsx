@@ -20,14 +20,6 @@ export default function FinancialStressChart({ data }) {
               name: 'Stress Level',
               fill: 'tozeroy',
               fillcolor: 'rgba(6, 182, 212, 0.1)',
-            },
-            {
-              x: data.dates,
-              y: data.recoveryRates,
-              type: 'scatter',
-              mode: 'lines',
-              line: { color: '#8b5cf6', width: 2, dash: 'dot' },
-              name: 'Recovery Rate'
             }
           ]}
           layout={{
