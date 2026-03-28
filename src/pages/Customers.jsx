@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ShieldAlert, Info, TrendingUp, AlertTriangle, Search, Filter, Download, UserMinus, ArrowUpDown } from 'lucide-react';
 
 const generateMockData = (count) => {
@@ -282,7 +283,11 @@ export default function Customers() {
                 processedData.map((row) => (
                   <tr key={row.customer_id} className="hover:bg-slate-800/40 transition-colors cursor-default whitespace-nowrap">
                     {/* Customer Profile */}
-                    <td className="px-4 py-3 text-sm font-mono text-cyan-400 border-r border-white/5">{row.customer_id}</td>
+                    <td className="px-4 py-3 text-sm font-mono border-r border-white/5">
+                      <Link to={`/customers/${row.customer_id}`} className="text-cyan-400 hover:text-cyan-300 hover:underline transition-colors">
+                        {row.customer_id}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-300 text-right">{row.age}</td>
                     <td className="px-4 py-3 text-sm text-slate-300">{row.account_tenure}</td>
                     <td className="px-4 py-3 text-sm border-r border-white/5"><PillBadge value={row.label} /></td>
