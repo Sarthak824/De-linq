@@ -59,7 +59,9 @@ PROFILE_COLUMNS = [
 PREDICTION_COLUMNS = [
     "customer_id",
     "risk_score",
+    "xgb_risk_score",
     "sequence_risk_score",
+    "score_source",
     "risk_prediction",
     "risk_band",
     "top_reason_codes",
@@ -175,7 +177,9 @@ def init_database(db_path=None):
             CREATE TABLE IF NOT EXISTS customer_predictions (
                 customer_id TEXT PRIMARY KEY,
                 risk_score REAL,
+                xgb_risk_score REAL,
                 sequence_risk_score REAL,
+                score_source TEXT,
                 risk_prediction INTEGER,
                 risk_band TEXT,
                 top_reason_codes TEXT,
@@ -227,10 +231,26 @@ def init_database(db_path=None):
         connection.execute(
             "CREATE INDEX IF NOT EXISTS idx_predictions_risk_score ON customer_predictions (risk_score DESC)"
         )
+        _ensure_prediction_columns(connection)
         connection.execute(
             "CREATE INDEX IF NOT EXISTS idx_interventions_customer_id ON intervention_history (customer_id, triggered_at DESC)"
         )
         connection.commit()
+
+
+def _ensure_prediction_columns(connection):
+    existing_columns = {
+        row[1] for row in connection.execute("PRAGMA table_info(customer_predictions)").fetchall()
+    }
+    required_columns = {
+        "xgb_risk_score": "REAL",
+        "score_source": "TEXT",
+    }
+    for column_name, column_type in required_columns.items():
+        if column_name not in existing_columns:
+            connection.execute(
+                f"ALTER TABLE customer_predictions ADD COLUMN {column_name} {column_type}"
+            )
 
 
 def _normalize_columns(df, columns):
@@ -278,7 +298,7 @@ def load_customer_predictions(db_path=None):
     init_database(db_path)
     with get_connection(db_path) as connection:
         return pd.read_sql_query(
-            "SELECT customer_id, risk_score, sequence_risk_score, risk_prediction, risk_band, "
+            "SELECT customer_id, risk_score, xgb_risk_score, sequence_risk_score, score_source, risk_prediction, risk_band, "
             "top_reason_codes, recommended_intervention, persona_label, persona_signals, "
             "financial_stress_level, intent_label, policy_action, policy_priority, recommended_channel "
             "FROM customer_predictions",

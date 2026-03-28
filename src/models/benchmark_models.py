@@ -21,6 +21,12 @@ def run_lightgbm_training():
     return run_training()
 
 
+def run_combined_evaluation():
+    from src.models.evaluate_combined_risk import evaluate_combined_risk
+
+    return evaluate_combined_risk()
+
+
 def _load_metrics(model_name):
     metrics_path = os.path.join(METRICS_DIR, f"{model_name}_metrics.json")
     if not os.path.exists(metrics_path):
@@ -33,13 +39,19 @@ def run_benchmark():
     results = {}
 
     run_xgboost_training()
-    results["xgboost"] = _load_metrics("xgboost")
+    results["xgboost"] = _load_metrics("xgboost") or {"status": "missing_metrics"}
 
     try:
         run_lightgbm_training()
-        results["lightgbm"] = _load_metrics("lightgbm")
+        results["lightgbm"] = _load_metrics("lightgbm") or {"status": "missing_metrics"}
     except RuntimeError as exc:
         results["lightgbm"] = {"status": "skipped", "reason": str(exc)}
+
+    try:
+        run_combined_evaluation()
+        results["combined"] = _load_metrics("combined") or {"status": "missing_metrics"}
+    except RuntimeError as exc:
+        results["combined"] = {"status": "skipped", "reason": str(exc)}
 
     print("\nBenchmark summary:")
     for model_name, payload in results.items():

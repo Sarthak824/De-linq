@@ -41,6 +41,7 @@ class CustomerFeatures(BaseModel):
     credit_dependency: float
     early_risk_flag: int
     stability_score: float
+    sequence_risk_score: Optional[float] = None
 
 
 class BatchPredictionRequest(BaseModel):

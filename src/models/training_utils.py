@@ -33,6 +33,11 @@ def compute_classification_metrics(y_true, y_pred, y_prob):
     }
 
 
+def compute_score_metrics(y_true, y_score, threshold=0.5):
+    y_pred = (pd.Series(y_score).astype(float) >= threshold).astype(int)
+    return compute_classification_metrics(y_true, y_pred, y_score)
+
+
 def save_metrics(model_name, metrics):
     os.makedirs(METRICS_DIR, exist_ok=True)
     output_path = os.path.join(METRICS_DIR, f"{model_name}_metrics.json")

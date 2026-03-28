@@ -2,6 +2,7 @@ import unittest
 
 import pandas as pd
 
+from src.models.combined_risk import combine_risk_scores
 from src.interventions.recommend import recommend_intervention
 from src.persona.persona_builder import build_persona, generate_personas
 from src.policy.decision_engine import apply_policy_engine
@@ -47,6 +48,18 @@ def sample_row(**overrides):
 
 
 class PersonaPipelineTests(unittest.TestCase):
+    def test_combine_risk_scores_uses_weighted_fusion(self):
+        combined_score, source = combine_risk_scores(0.8, 0.5, xgb_weight=0.6, sequence_weight=0.4)
+
+        self.assertEqual(combined_score, 0.68)
+        self.assertEqual(source, "combined")
+
+    def test_combine_risk_scores_falls_back_to_xgboost(self):
+        combined_score, source = combine_risk_scores(0.8, pd.NA)
+
+        self.assertEqual(combined_score, 0.8)
+        self.assertEqual(source, "xgboost_only")
+
     def test_build_persona_assigns_declining_gig_worker(self):
         persona = build_persona(sample_row())
 

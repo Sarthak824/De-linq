@@ -11,6 +11,7 @@ if BASE_DIR not in sys.path:
 
 from src.interventions.recommend import enrich_customer_decision
 from src.intelligence.intent_detector import detect_intents
+from src.models.combined_risk import combine_risk_scores
 from src.models.model_config import FEATURE_COLUMNS
 from src.policy.decision_engine import apply_policy_engine
 from src.persona.persona_builder import generate_personas
@@ -73,12 +74,33 @@ def load_sequence_scores(sequence_scores_path=SEQUENCE_SCORES_PATH):
 def score_customers(df, model):
     feature_frame = prepare_features(df)
 
-    risk_scores = model.predict_proba(feature_frame)[:, 1]
+    xgb_risk_scores = model.predict_proba(feature_frame)[:, 1]
     risk_predictions = model.predict(feature_frame)
 
     output_df = df.copy()
-    output_df["risk_score"] = risk_scores.round(4)
+    output_df["xgb_risk_score"] = xgb_risk_scores.round(4)
     output_df["risk_prediction"] = risk_predictions.astype(int)
+
+    if "sequence_risk_score" not in output_df.columns:
+        output_df["sequence_risk_score"] = pd.NA
+
+    sequence_scores_df = load_sequence_scores()
+    if not sequence_scores_df.empty and "customer_id" in output_df.columns:
+        latest_sequence_scores = (
+            sequence_scores_df.drop_duplicates(subset=["customer_id"], keep="last")
+            .set_index("customer_id")["sequence_risk_score"]
+        )
+        missing_mask = output_df["sequence_risk_score"].isna()
+        output_df.loc[missing_mask, "sequence_risk_score"] = output_df.loc[missing_mask, "customer_id"].map(
+            latest_sequence_scores
+        )
+
+    combined_scores = output_df.apply(
+        lambda row: combine_risk_scores(row["xgb_risk_score"], row.get("sequence_risk_score")),
+        axis=1,
+    )
+    output_df["risk_score"] = combined_scores.apply(lambda item: item[0])
+    output_df["score_source"] = combined_scores.apply(lambda item: item[1])
 
     decisions = output_df.apply(
         lambda row: enrich_customer_decision(row, row["risk_score"]),
@@ -105,10 +127,6 @@ def score_customers(df, model):
         axis=1,
     )
 
-    sequence_scores_df = load_sequence_scores()
-    if not sequence_scores_df.empty and "customer_id" in output_df.columns:
-        output_df = output_df.merge(sequence_scores_df, on="customer_id", how="left")
-
     return output_df
 
 
@@ -116,7 +134,9 @@ def format_prediction_row(row):
     return {
         "customer_id": row.get("customer_id"),
         "risk_score": float(row["risk_score"]),
+        "xgb_risk_score": float(row["xgb_risk_score"]) if pd.notna(row.get("xgb_risk_score")) else None,
         "sequence_risk_score": float(row["sequence_risk_score"]) if pd.notna(row.get("sequence_risk_score")) else None,
+        "score_source": row.get("score_source"),
         "risk_prediction": int(row["risk_prediction"]),
         "risk_band": row["risk_band"],
         "top_reason_codes": [item.strip() for item in row["top_reason_codes"].split(",")],
@@ -178,7 +198,9 @@ def run_batch_inference(input_path=INPUT_PATH, output_path=OUTPUT_PATH, model_pa
     output_columns = [
         "customer_id",
         "risk_score",
+        "xgb_risk_score",
         "sequence_risk_score",
+        "score_source",
         "risk_prediction",
         "risk_band",
         "top_reason_codes",

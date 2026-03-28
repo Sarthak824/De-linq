@@ -51,7 +51,9 @@ class StorageTests(unittest.TestCase):
                     {
                         "customer_id": "CUST000001",
                         "risk_score": 0.82,
+                        "xgb_risk_score": 0.79,
                         "sequence_risk_score": 0.77,
+                        "score_source": "combined",
                         "risk_prediction": 1,
                         "risk_band": "High",
                         "top_reason_codes": "job_loss_signal, high_emi_burden",
@@ -90,6 +92,8 @@ class StorageTests(unittest.TestCase):
 
             self.assertEqual(len(analysis_df), 1)
             self.assertEqual(analysis_df.iloc[0]["risk_band"], "High")
+            self.assertEqual(analysis_df.iloc[0]["xgb_risk_score"], 0.79)
+            self.assertEqual(analysis_df.iloc[0]["score_source"], "combined")
             self.assertEqual(len(history_df), 1)
             self.assertEqual(history_df.iloc[0]["delivery_status"], "sent")
 
@@ -97,16 +101,18 @@ class StorageTests(unittest.TestCase):
         with patch("src.models.benchmark_models.run_xgboost_training"):
             with patch(
                 "src.models.benchmark_models._load_metrics",
-                side_effect=[{"roc_auc": 0.91}, None],
+                side_effect=[{"roc_auc": 0.91}, {"roc_auc": 0.88}],
             ):
                 with patch(
                     "src.models.benchmark_models.run_lightgbm_training",
                     side_effect=RuntimeError("LightGBM is not installed"),
                 ):
-                    results = run_benchmark()
+                    with patch("src.models.benchmark_models.run_combined_evaluation"):
+                        results = run_benchmark()
 
         self.assertEqual(results["xgboost"]["roc_auc"], 0.91)
         self.assertEqual(results["lightgbm"]["status"], "skipped")
+        self.assertEqual(results["combined"]["roc_auc"], 0.88)
 
 
 if __name__ == "__main__":

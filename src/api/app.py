@@ -69,12 +69,15 @@ class CustomerFeatures(BaseModel):
     active_loans: Optional[int] = 0
     loan_top_up_indicator: Optional[int] = 0
     credit_exposure_score: Optional[float] = 0.0
+    sequence_risk_score: Optional[float] = None
 
 
 class PredictionResponse(BaseModel):
     customer_id: Optional[str]
     risk_score: float
+    xgb_risk_score: Optional[float] = None
     sequence_risk_score: Optional[float] = None
+    score_source: Optional[str] = None
     risk_prediction: int
     risk_band: str
     top_reason_codes: List[str]
@@ -164,7 +167,9 @@ class CustomerListItem(BaseModel):
     monthly_income: float
     account_tenure: int
     risk_score: Optional[float] = None
+    xgb_risk_score: Optional[float] = None
     sequence_risk_score: Optional[float] = None
+    score_source: Optional[str] = None
     risk_band: Optional[str] = None
     persona_label: Optional[str] = None
     intent_label: Optional[str] = None
@@ -261,7 +266,9 @@ def _get_customer_record(customer_id: str):
 def _split_customer_payload(record: dict):
     prediction_keys = {
         "risk_score",
+        "xgb_risk_score",
         "sequence_risk_score",
+        "score_source",
         "risk_prediction",
         "risk_band",
         "top_reason_codes",
