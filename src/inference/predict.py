@@ -14,8 +14,9 @@ from src.intelligence.intent_detector import detect_intents
 from src.models.model_config import FEATURE_COLUMNS
 from src.policy.decision_engine import apply_policy_engine
 from src.persona.persona_builder import generate_personas
-from src.intelligence.exposure_analyzer import analyze_exposure
-from src.intelligence.hidden_distress_engine import analyze_hidden_distress
+from src.intelligence.exposure_analyzer import analyze_exposure, batch_analyze_exposure
+from src.intelligence.hidden_distress_engine import analyze_hidden_distress, batch_analyze_hidden_distress
+from src.intelligence.liquidity_engine import analyze_liquidity_stress, batch_analyze_liquidity_stress
 from src.storage.database import save_customer_predictions, save_customer_profiles
 
 MODEL_PATH = os.path.join(BASE_DIR, "artifacts", "xgb_model.pkl")
@@ -89,14 +90,12 @@ def score_customers(df, model):
     output_df["top_reason_codes"] = output_df["top_reason_codes"].apply(lambda items: ", ".join(items))
     output_df = detect_intents(output_df)
     
-    # 2nd Layer: Exposure Analysis
-    exposure_results = output_df.apply(analyze_exposure, axis=1)
-    output_df = pd.concat([output_df, pd.DataFrame(list(exposure_results))], axis=1)
-    
-    # 2nd Layer: Hidden Distress Analysis
-    distress_results = output_df.apply(analyze_hidden_distress, axis=1)
-    output_df = pd.concat([output_df, pd.DataFrame(list(distress_results))], axis=1)
+    # 2nd Layer: Intelligence Engines (Optimized Batch Processing)
+    output_df = batch_analyze_exposure(output_df)
+    output_df = batch_analyze_hidden_distress(output_df)
+    output_df = batch_analyze_liquidity_stress(output_df)
 
+    # Generate personas AFTER intelligence engines to include behavioral signals
     output_df = generate_personas(output_df)
     output_df = apply_policy_engine(output_df)
     output_df["recommended_intervention"] = output_df.apply(
@@ -137,6 +136,11 @@ def format_prediction_row(row):
         "liquidity_pattern": row.get("liquidity_pattern"),
         "patchwork_index": float(row["patchwork_index"]) if pd.notna(row.get("patchwork_index")) else 0.0,
         "emi_buffer_days": int(row["emi_buffer_days"]) if pd.notna(row.get("emi_buffer_days")) else 0,
+        "liquidity_stress_level": row.get("liquidity_stress_level"),
+        "liquidity_stress_message": row.get("liquidity_stress_message"),
+        "asset_depletion_strategy": row.get("asset_depletion_strategy"),
+        "depletion_index": float(row["depletion_index"]) if pd.notna(row.get("depletion_index")) else 0.0,
+        "od_usage_pct": float(row["od_usage_pct"]) if pd.notna(row.get("od_usage_pct")) else 0.0,
     }
 
 
@@ -152,6 +156,7 @@ def build_portfolio_summary(scored_df):
 
     return {
         "total_customers": int(len(scored_df)),
+        "at_risk_customers": int(len(scored_df[scored_df["risk_band"].str.contains("High", na=False)])),
         "average_risk_score": round(float(scored_df["risk_score"].mean()), 4),
         "risk_band_counts": risk_band_counts,
         "intervention_counts": intervention_counts,
@@ -193,6 +198,11 @@ def run_batch_inference(input_path=INPUT_PATH, output_path=OUTPUT_PATH, model_pa
         "liquidity_pattern",
         "patchwork_index",
         "emi_buffer_days",
+        "liquidity_stress_level",
+        "liquidity_stress_message",
+        "asset_depletion_strategy",
+        "depletion_index",
+        "od_usage_pct",
     ]
     existing_columns = [col for col in output_columns if col in scored_df.columns]
     scored_df[existing_columns].to_csv(output_path, index=False)

@@ -57,6 +57,14 @@ def run_feature_engineering():
         + (df["informal_borrowing_indicator"] * 0.1)
     ).clip(0, 1)
 
+    # 2nd Layer Model: Liquidity Stress & Asset Utilization Engine
+    df["liquidity_stress_score"] = (
+        (df["fd_break_flag"] * 0.4)
+        + (df["gold_loan_active"] * 0.2)
+        + ((df["mf_liquidation_amount"] / 200000) * 0.2)
+        + ((df["od_utilization_pct"] / 100) * 0.2)
+    ).clip(0, 1)
+
     df.to_csv(OUTPUT_PATH, index=False)
 
     print(f"✅ Advanced features created: {df.shape}")

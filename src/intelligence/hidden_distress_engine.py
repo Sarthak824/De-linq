@@ -41,4 +41,5 @@ def analyze_hidden_distress(row):
 
 def batch_analyze_hidden_distress(df):
     results = df.apply(analyze_hidden_distress, axis=1)
-    return pd.concat([df, pd.DataFrame(list(results))], axis=1)
+    results_df = pd.DataFrame(list(results), index=df.index)
+    return pd.concat([df, results_df], axis=1)

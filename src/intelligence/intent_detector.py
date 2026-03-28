@@ -17,7 +17,7 @@ def detect_intent(row):
     if pd.isna(app_activity_flag):
         app_activity_flag = 1
 
-    if job_loss == 1 or balance_drop_ratio >= 0.5 or emi_to_income_ratio >= 0.6 or row.get("hidden_distress_level") == "High":
+    if job_loss == 1 or balance_drop_ratio >= 0.5 or emi_to_income_ratio >= 0.6 or row.get("hidden_distress_level") == "High" or row.get("liquidity_stress_level") == "Critical":
         return "high_distress"
 
     if (missed_payments >= 2 or bill_delay_count >= 2) and app_activity_flag == 0:

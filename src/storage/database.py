@@ -44,6 +44,16 @@ PROFILE_COLUMNS = [
     "active_loans",
     "loan_top_up_indicator",
     "credit_exposure_score",
+    "p2p_inflow_count",
+    "small_deposit_count",
+    "days_before_emi_inflow",
+    "informal_borrowing_indicator",
+    "fd_break_flag",
+    "mf_liquidation_amount",
+    "gold_loan_active",
+    "od_utilization_pct",
+    "hidden_distress_score",
+    "liquidity_stress_score",
 ]
 
 PREDICTION_COLUMNS = [
@@ -66,6 +76,16 @@ PREDICTION_COLUMNS = [
     "debt_structure",
     "active_loan_summary",
     "exposure_score",
+    "hidden_distress_level",
+    "hidden_distress_message",
+    "liquidity_pattern",
+    "patchwork_index",
+    "emi_buffer_days",
+    "liquidity_stress_level",
+    "liquidity_stress_message",
+    "asset_depletion_strategy",
+    "depletion_index",
+    "od_usage_pct",
 ]
 
 INTERVENTION_COLUMNS = [
@@ -136,7 +156,17 @@ def init_database(db_path=None):
                 gold_loans INTEGER,
                 active_loans INTEGER,
                 loan_top_up_indicator INTEGER,
-                credit_exposure_score REAL
+                credit_exposure_score REAL,
+                p2p_inflow_count INTEGER,
+                small_deposit_count INTEGER,
+                days_before_emi_inflow INTEGER,
+                informal_borrowing_indicator INTEGER,
+                fd_break_flag INTEGER,
+                mf_liquidation_amount REAL,
+                gold_loan_active INTEGER,
+                od_utilization_pct REAL,
+                hidden_distress_score REAL,
+                liquidity_stress_score REAL
             )
             """
         )
@@ -167,6 +197,11 @@ def init_database(db_path=None):
                 liquidity_pattern TEXT,
                 patchwork_index REAL,
                 emi_buffer_days INTEGER,
+                liquidity_stress_level TEXT,
+                liquidity_stress_message TEXT,
+                asset_depletion_strategy TEXT,
+                depletion_index REAL,
+                od_usage_pct REAL,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
             """
@@ -266,22 +301,12 @@ def load_intervention_history(customer_id=None, db_path=None):
 
 def load_customer_analysis(limit=None, customer_id=None, db_path=None):
     init_database(db_path)
-    query = """
+    # Explicitly list prediction columns to avoid duplicate 'customer_id' column
+    pred_cols = ", ".join([f"predictions.{col}" for col in PREDICTION_COLUMNS if col != "customer_id"])
+    query = f"""
         SELECT
             profiles.*,
-            predictions.risk_score,
-            predictions.sequence_risk_score,
-            predictions.risk_prediction,
-            predictions.risk_band,
-            predictions.top_reason_codes,
-            predictions.recommended_intervention,
-            predictions.persona_label,
-            predictions.persona_signals,
-            predictions.financial_stress_level,
-            predictions.intent_label,
-            predictions.policy_action,
-            predictions.policy_priority,
-            predictions.recommended_channel
+            {pred_cols}
         FROM customer_profiles AS profiles
         LEFT JOIN customer_predictions AS predictions
             ON profiles.customer_id = predictions.customer_id

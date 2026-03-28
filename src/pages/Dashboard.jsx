@@ -1,4 +1,5 @@
-import { Users, AlertTriangle, Activity } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Users, AlertTriangle, Activity, Loader2 } from "lucide-react";
 import KPICard from "../components/dashboard/KPICard";
 import FinancialStressChart from "./FinancialStressChart";
 import RiskTable from "../components/dashboard/RiskTable";
@@ -33,6 +34,65 @@ const mockInsights = [
 // -----------------
 
 export default function Dashboard() {
+  const [stats, setStats] = useState({ totalCustomers: "0", atRisk: "0", avgRisk: 0 });
+  const [topRisks, setTopRisks] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [statsRes, risksRes, insightsRes] = await Promise.all([
+          fetch('http://127.0.0.1:8000/portfolio-summary'),
+          fetch('http://127.0.0.1:8000/analytics/top-risks?limit=6'),
+          fetch('http://127.0.0.1:8000/analytics/insights')
+        ]);
+        
+        const statsData = await statsRes.json();
+        const risksData = await risksRes.json();
+        const insightsData = await insightsRes.json();
+        
+        setStats({
+          totalCustomers: (statsData.total_customers || 0).toLocaleString(),
+          atRisk: (statsData.at_risk_customers || 0).toLocaleString(),
+          avgRisk: Math.round((statsData.average_risk_score || 0) * 100)
+        });
+        
+        setInsights(insightsData);
+        
+        setTopRisks(risksData.customers.map(c => {
+          let drivers = c.top_reason_codes || "Multi-factor risk";
+          if (typeof drivers === 'string') drivers = drivers.split(',')[0];
+          else if (Array.isArray(drivers) && drivers.length > 0) drivers = drivers[0];
+          else drivers = "Multi-factor risk";
+
+          return {
+            id: c.customer_id,
+            riskScore: Math.round((c.risk_score || 0) * 100),
+            category: c.risk_band || "Low",
+            keyDriver: drivers.replace(/_/g, ' '),
+            lastActivity: "Updated now",
+            action: "Review Profile"
+          };
+        }));
+      } catch (err) {
+        console.error("Dashboard fetch failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="w-12 h-12 text-cyan-500 animate-spin" />
+        <p className="text-slate-400 font-medium">Synchronizing Portfolio Intelligence...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -54,14 +114,14 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <KPICard 
           title="Total Customers" 
-          value={mockKPIs.totalCustomers} 
+          value={stats.totalCustomers} 
           trend={2.4} 
           trendLabel="vs last month" 
           icon={Users} 
         />
         <KPICard 
           title="At-Risk Customers" 
-          value={mockKPIs.atRisk} 
+          value={stats.atRisk} 
           trend={12.5} 
           trendLabel="vs last month" 
           icon={AlertTriangle} 
@@ -69,7 +129,7 @@ export default function Dashboard() {
         />
         <KPICard 
           title="Average Risk Score" 
-          value={`${mockKPIs.avgRisk}%`} 
+          value={`${stats.avgRisk}%`} 
           trend={1.2} 
           trendLabel="vs last month" 
           icon={Activity} 
@@ -77,7 +137,7 @@ export default function Dashboard() {
           valueColor="text-amber-400"
           secondaryLabel="Medium Risk"
           tooltip="Average predicted probability of default across all customers"
-          progressValue={mockKPIs.avgRisk}
+          progressValue={stats.avgRisk}
           progressColor="bg-amber-400"
         />
       </div>
@@ -92,10 +152,10 @@ export default function Dashboard() {
       {/* Table & Insights Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <RiskTable customers={mockRiskCustomers} />
+          <RiskTable customers={topRisks} />
         </div>
         <div className="lg:col-span-1 h-full min-h-[350px]">
-          <AIInsights insights={mockInsights} />
+          <AIInsights insights={insights} />
         </div>
       </div>
     </div>

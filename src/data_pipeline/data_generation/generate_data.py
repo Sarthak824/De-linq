@@ -125,6 +125,10 @@ def generate_customer(i):
         "small_deposit_count": random.randint(0, 3) if profile == "stable" else random.randint(3, 10),
         "days_before_emi_inflow": random.randint(5, 25) if profile == "stable" else random.randint(0, 5),
         "informal_borrowing_indicator": np.random.binomial(1, 0.05 if profile == "stable" else 0.4),
+        "fd_break_flag": np.random.binomial(1, 0.02 if profile == "stable" else 0.25),
+        "mf_liquidation_amount": random.randint(0, 5000) if profile == "stable" else random.randint(20000, 200000),
+        "gold_loan_active": np.random.binomial(1, 0.05 if profile == "stable" else 0.35),
+        "od_utilization_pct": round(random.uniform(0, 10) if profile == "stable" else random.uniform(40, 95), 2),
     }
 
 

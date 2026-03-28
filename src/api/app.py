@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -95,6 +96,11 @@ class PredictionResponse(BaseModel):
     liquidity_pattern: Optional[str] = None
     patchwork_index: Optional[float] = 0.0
     emi_buffer_days: Optional[int] = 0
+    liquidity_stress_level: Optional[str] = None
+    liquidity_stress_message: Optional[str] = None
+    asset_depletion_strategy: Optional[str] = None
+    depletion_index: Optional[float] = 0.0
+    od_usage_pct: Optional[float] = 0.0
 
 
 class BatchPredictionRequest(BaseModel):
@@ -107,6 +113,7 @@ class BatchPredictionResponse(BaseModel):
 
 class PortfolioSummaryResponse(BaseModel):
     total_customers: int
+    at_risk_customers: int
     average_risk_score: float
     risk_band_counts: dict
     intervention_counts: dict
@@ -276,6 +283,11 @@ def _split_customer_payload(record: dict):
         "liquidity_pattern",
         "patchwork_index",
         "emi_buffer_days",
+        "liquidity_stress_level",
+        "liquidity_stress_message",
+        "asset_depletion_strategy",
+        "depletion_index",
+        "od_usage_pct",
     }
 
     profile = {}
@@ -324,33 +336,27 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="DelinqAI Risk API", version="1.0.0", lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
 
-@app.get("/customers", response_model=CustomerListResponse)
-def get_customers(limit: int = 100):
+@app.get("/customers")
+def get_customers(limit: int = 500):
     try:
         analysis_df = _build_customer_analysis_frame().head(limit)
-        customers = []
-
-        for _, row in analysis_df.iterrows():
-            customers.append(
-                {
-                    "customer_id": row["customer_id"],
-                    "age": int(row["age"]),
-                    "monthly_income": float(row["monthly_income"]),
-                    "account_tenure": int(row["account_tenure"]),
-                    "risk_score": float(row["risk_score"]) if "risk_score" in row and pd.notna(row["risk_score"]) else None,
-                    "sequence_risk_score": float(row["sequence_risk_score"]) if "sequence_risk_score" in row and pd.notna(row["sequence_risk_score"]) else None,
-                    "risk_band": row["risk_band"] if "risk_band" in row and pd.notna(row["risk_band"]) else None,
-                    "persona_label": row["persona_label"] if "persona_label" in row and pd.notna(row["persona_label"]) else None,
-                    "intent_label": row["intent_label"] if "intent_label" in row and pd.notna(row["intent_label"]) else None,
-                    "recommended_intervention": row["recommended_intervention"] if "recommended_intervention" in row and pd.notna(row["recommended_intervention"]) else None,
-                }
-            )
+        # Convert all NaN to None for JSON compatibility
+        analysis_df = analysis_df.where(pd.notnull(analysis_df), None)
+        customers = analysis_df.to_dict(orient="records")
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -527,10 +533,70 @@ def intervention_history(customer_id: str):
     return {"customer_id": customer_id, "history": history}
 
 
+@app.get("/analytics/insights")
+def get_dynamic_insights():
+    try:
+        predictions_df = _load_customer_predictions()
+        if predictions_df.empty:
+            return []
+            
+        insights = []
+        
+        # Insight 1: High Risk Segment
+        high_risk_count = int((predictions_df["risk_score"] > 0.7).sum())
+        high_risk_pct = (high_risk_count / len(predictions_df)) * 100
+        insights.append({
+            "type": "alert",
+            "message": f"Critical Attention: {high_risk_pct:.1f}% of the portfolio ({high_risk_count} customers) is currently in the High Risk band.",
+            "time": "Updated now"
+        })
+        
+        # Insight 2: Shock Flag Impact
+        if "shock_flag" in predictions_df.columns:
+            # Map Yes/No or 1/0
+            if predictions_df["shock_flag"].dtype == object:
+                shock_count = int((predictions_df["shock_flag"] == "Yes").sum())
+            else:
+                shock_count = int(predictions_df["shock_flag"].sum())
+            
+            insights.append({
+                "type": "alert",
+                "message": f"Detection Engine: {shock_count} customers flagged with potential financial shock signals requiring immediate outreach.",
+                "time": "Updated now"
+            })
+            
+        # Insight 3: Average Coping/Liquidity
+        if "patchwork_index" in predictions_df.columns:
+            avg_patchwork = float(predictions_df["patchwork_index"].mean()) * 100
+            insights.append({
+                "type": "trend",
+                "message": f"Market Behavior: Portfolio-wide 'Patchwork' index is at {avg_patchwork:.0f}%, indicating moderate liquidity stress in middle-income segments.",
+                "time": "Updated now"
+            })
+
+        # Insight 4: Debt Structure
+        if "exposure_score" in predictions_df.columns:
+            high_exp = int((predictions_df["exposure_score"] > 0.6).sum())
+            insights.append({
+                "type": "info",
+                "message": f"Exposure Alert: {high_exp} customers show debt-to-income misalignment (Exposure > 60%). Recommend debt consolidation.",
+                "time": "Updated now"
+            })
+
+        return insights
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @app.get("/portfolio-summary", response_model=PortfolioSummaryResponse)
 def portfolio_summary():
     try:
-        scored_df = run_batch_inference(input_path=INPUT_PATH)
+        # Optimization: Use pre-scored data instead of re-running inference every time
+        scored_df = _load_customer_predictions()
+        if scored_df.empty:
+            # Fallback to scoring if empty (first run)
+            scored_df = run_batch_inference(input_path=INPUT_PATH)
+            
         summary = build_portfolio_summary(scored_df)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

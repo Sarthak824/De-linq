@@ -31,26 +31,26 @@ export default function CustomerDetail() {
           reasons: prediction.top_reason_codes || ["Stable profile"],
           
           // Core Metrics
-          income: profile.monthly_income || 50000,
-          emi: profile.emi || 15000,
-          creditDue: profile.credit_card_due || 5000,
-          creditUtil: (profile.credit_utilization || 0.4) * 100,
+          income: profile.monthly_income || 0,
+          emi: profile.emi || 0,
+          creditDue: profile.credit_card_due || 0,
+          creditUtil: (profile.credit_utilization || 0) * 100,
           missedPayments: profile.missed_payments || 0,
           
           // Enhanced Metrics
-          age: profile.age || 35,
-          tenure: profile.account_tenure || 24,
-          liquidityBuffer: profile.liquidity_buffer || 15000,
-          emiRatio: (profile.emi_to_income_ratio || 0.3) * 100,
-          debtStress: (profile.debt_stress_ratio || 0.4) * 100,
-          healthScore: (profile.financial_health_score || 0.5) * 100,
-          stabilityScore: (profile.stability_score || 0.5) * 100,
-          paymentDisc: (profile.payment_discipline || 0.5) * 100,
-          avgBalance: profile.avg_balance || 25000,
-          jobLoss: profile.job_loss || 0,
-          salaryDelay: profile.salary_delay || 0,
+          age: profile.age || 'N/A',
+          tenure: profile.account_tenure || 'N/A',
+          liquidityBuffer: profile.liquidity_buffer || 0,
+          emiRatio: (profile.emi_to_income_ratio || 0) * 100,
+          debtStress: (profile.debt_stress_ratio || 0) * 100,
+          healthScore: (profile.financial_health_score || 0) * 100,
+          stabilityScore: (profile.stability_score || 0) * 100,
+          paymentDisc: (profile.payment_discipline || 0) * 100,
+          avgBalance: profile.avg_balance || 0,
+          jobLoss: profile.job_loss === 1 ? "Yes" : "No",
+          salaryDelay: profile.salary_delay === 1 ? "Yes" : "No",
           spendingInstability: (profile.spending_instability || 0) * 100,
-          shockFlag: profile.shock_flag || 0,
+          shockFlag: profile.shock_flag === 1 ? "Yes" : "No",
           atmWithdrawals: profile.atm_withdrawals || 0,
           billDelayCount: profile.bill_delay_count || 0,
 
@@ -66,74 +66,57 @@ export default function CustomerDetail() {
           distressMessage: prediction.hidden_distress_message || "Stable financial behavior.",
           liquidityPattern: prediction.liquidity_pattern || "Stable",
           patchworkIndex: (prediction.patchwork_index || 0) * 100,
-          emiBuffer: prediction.emi_buffer_days || 0
+          emiBuffer: prediction.emi_buffer_days || 0,
+          
+          // 2nd Layer: Liquidity Stress
+          liquidityStressLevel: prediction.liquidity_stress_level || "Healthy",
+          liquidityStressMessage: prediction.liquidity_stress_message || "Assets remain intact.",
+          depletionStrategy: prediction.asset_depletion_strategy || "Stable",
+          depletionIndex: (prediction.depletion_index || 0) * 100,
+          odUsage: prediction.od_usage_pct || 0
         });
       } catch (err) {
-        // Deterministic Fallback Mock for UX Testing
-        const numId = parseInt(id.replace(/[^0-9]/g, '')) || 101000;
-        const seed = numId % 100;
-        const risk = 40 + ((seed * 7) % 50);
-        
-        setData({
-          id: id,
-          riskScore: risk,
-          category: risk > 75 ? "High" : risk > 50 ? "Medium" : "Low",
-          intervention: risk > 75 ? "Offer EMI Restructuring & Pause" : risk > 50 ? "Proactive Check-in Call" : "Automated Payment Reminder",
-          persona: risk > 75 ? "Credit Dependent Stressed User" : risk > 50 ? "Willing but Overleveraged" : "Stable Planner",
-          intent: risk > 75 ? "high_distress" : risk > 50 ? "willing_but_stressed" : "stable",
-          reasons: risk > 75 ? ["High EMI burden", "Low liquidity buffer", "Recent salary delay"] : ["Minor credit utilization spike"],
-          
-          income: 60000 + (seed * 1000),
-          emi: 20000 + (seed * 200),
-          creditDue: 5000 + (seed * 100),
-          creditUtil: 30 + (seed % 60),
-          missedPayments: seed % 4,
-          
-          age: 26 + (seed % 20),
-          tenure: 12 + (seed % 48),
-          liquidityBuffer: 25000 - (seed * 200),
-          emiRatio: 33 + (seed % 20),
-          debtStress: 40 + (seed % 30),
-          healthScore: 85 - (seed % 40),
-          stabilityScore: 90 - (seed % 50),
-          paymentDisc: 85 - (seed % 20),
-          avgBalance: 30000 - (seed * 100),
-          jobLoss: seed % 11 === 0 ? 1 : 0,
-          salaryDelay: seed % 7 === 0 ? 1 : 0,
-          spendingInstability: (seed % 100),
-          shockFlag: seed % 13 === 0 ? 1 : 0,
-          atmWithdrawals: seed % 5,
-          billDelayCount: seed % 3,
-
-          // Fallback Exposure Mock
-          exposureLevel: seed % 7 === 0 ? "High" : seed % 3 === 0 ? "Moderate" : "Low",
-          exposureMessage: seed % 7 === 0 ? "High exposure due to multiple unsecured personal loans." : "Stable credit structure.",
-          debtStructure: seed % 7 === 0 ? "Unsecured-Heavy" : "Secured",
-          activeLoanSummary: `${(seed % 5) + 1} active (${seed % 2}S, ${(seed % 3) + 1}P, 0G)`,
-          exposureScore: 20 + (seed % 60),
-
-          // Fallback Distress Mock
-          distressLevel: seed % 5 === 0 ? "High" : seed % 3 === 0 ? "Moderate" : "Low",
-          distressMessage: seed % 5 === 0 ? "Acute hidden distress detected; frequent P2P transfers before EMI." : "Organic money movement.",
-          liquidityPattern: seed % 5 === 0 ? "P2P-Heavy" : seed % 3 === 0 ? "Fragmented" : "Stable",
-          patchworkIndex: 10 + (seed % 70),
-          emiBuffer: seed % 5 === 0 ? 1 : 15
-        });
+        console.error("Failed to load customer:", err);
+        setData(null);
       } finally {
         setLoading(false);
       }
     };
     loadCustomer();
-  }, [id]);
+  }, [id, navigate]);
 
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-[600px] gap-4">
-      <div className="w-12 h-12 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin shadow-[0_0_15px_rgba(6,182,212,0.5)]"></div>
-      <p className="text-cyan-400/70 font-mono tracking-widest text-sm animate-pulse">ANALYZING PROFILE...</p>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[600px] gap-6 text-center animate-pulse">
+        <div className="w-16 h-16 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+        <p className="text-xl font-bold text-slate-300">Synchronizing Data Integrity...</p>
+      </div>
+    );
+  }
 
-  if (!data) return <div className="p-10 text-rose-400">Failed to load customer profile.</div>;
+  if (!data) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[600px] gap-6 text-center px-6">
+        <div className="w-24 h-24 bg-rose-500/10 rounded-full flex items-center justify-center text-rose-500 mb-2">
+          <AlertTriangle className="w-12 h-12" />
+        </div>
+        <div>
+          <h2 className="text-3xl font-bold text-white mb-2">Profile Missing</h2>
+          <p className="text-slate-400 max-w-sm mx-auto">
+            The profile for ID <span className="text-cyan-400 font-mono font-bold">{id}</span> was not found in our engine. 
+            Please select a valid customer from the centralized intelligence grid.
+          </p>
+        </div>
+        <button 
+          onClick={() => navigate('/customers')}
+          className="px-8 py-3 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded-2xl font-bold border border-cyan-500/30 transition-all flex items-center gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          View Integrated Customer Grid
+        </button>
+      </div>
+    );
+  }
 
   const hexColor = data.riskScore > 75 ? "#f43f5e" : data.riskScore > 50 ? "#f59e0b" : "#10b981";
   const glowClass = data.riskScore > 75 ? "shadow-[0_0_30px_rgba(244,63,94,0.15)] border-rose-500/30" : data.riskScore > 50 ? "shadow-[0_0_30px_rgba(245,158,11,0.15)] border-amber-500/30" : "shadow-[0_0_30px_rgba(16,185,129,0.15)] border-emerald-500/30";
@@ -165,7 +148,7 @@ export default function CustomerDetail() {
           <div>
             <h1 className="text-4xl font-black tracking-tight text-white flex items-center gap-3">
               {data.id} 
-              {data.shockFlag === 1 && <span className="px-2 py-0.5 rounded text-[10px] uppercase tracking-widest bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse">Financial Shock</span>}
+              {data.shockFlag === "Yes" && <span className="px-2 py-0.5 rounded text-[10px] uppercase tracking-widest bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse">Financial Shock</span>}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-3">
               <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border backdrop-blur-md ${bgClass} ${textClass} border-${hexColor}/30 flex items-center gap-1.5`}>
@@ -344,6 +327,49 @@ export default function CustomerDetail() {
                 <div className="bg-slate-800/40 p-3 rounded-xl border border-white/5 overflow-hidden">
                   <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Loans</p>
                   <p className={`text-[11px] font-bold text-slate-300 truncate`}>{data.activeLoanSummary}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Asset Utilization Card */}
+          <div className="bg-slate-900/40 backdrop-blur-md rounded-3xl border border-white/5 p-6 flex flex-col min-h-[300px]">
+            <h3 className="text-xs uppercase tracking-widest text-slate-400 font-bold w-full text-left mb-6 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-cyan-400" /> Asset Utilization & Liquidity
+            </h3>
+            <div className="space-y-6 flex-1 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-black text-white">{data.liquidityStressLevel}</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Liquidity Stress Level</p>
+                </div>
+                <div className="w-16 h-16 relative">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#22d3ee" strokeWidth="8" strokeDasharray="251" strokeDashoffset={251 - (data.depletionIndex / 100) * 251} strokeLinecap="round" />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-cyan-300">
+                    {Math.round(data.depletionIndex)}%
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-cyan-500/5 border border-cyan-500/20 rounded-2xl">
+                <p className="text-xs text-cyan-200 leading-relaxed font-medium italic">
+                  "{data.liquidityStressMessage}"
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-auto">
+                <div className="bg-slate-800/40 p-3 rounded-xl border border-white/5">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Strategy</p>
+                  <p className={`text-sm font-bold ${data.depletionStrategy === 'Stable' ? 'text-emerald-400' : 'text-cyan-400'}`}>{data.depletionStrategy}</p>
+                </div>
+                <div className="bg-slate-800/40 p-3 rounded-xl border border-white/5">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">OD Usage</p>
+                  <p className={`text-sm font-bold ${data.odUsage > 50 ? 'text-rose-400' : 'text-slate-200'}`}>
+                    {data.odUsage}%
+                  </p>
                 </div>
               </div>
             </div>

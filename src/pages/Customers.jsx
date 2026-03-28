@@ -1,63 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldAlert, Info, TrendingUp, AlertTriangle, Search, Filter, Download, UserMinus, ArrowUpDown } from 'lucide-react';
-
-const generateMockData = (count) => {
-  return Array.from({ length: count }, (_, i) => {
-    // Generate base risk indicators
-    const isHighRisk = Math.random() > 0.8;
-    const isMediumRisk = !isHighRisk && Math.random() > 0.6;
-    
-    // CUSTOMER PROFILE
-    const customer_id = `CUST-${(101000 + i).toString()}`;
-    const age = 22 + Math.floor(Math.random() * 45);
-    const account_tenure = `${1 + Math.floor(Math.random() * 10)} yrs`;
-    const label = isHighRisk ? "High Risk" : isMediumRisk ? "Medium Risk" : "Healthy";
-
-    // INCOME & OBLIGATIONS
-    const monthly_income = 45000 + Math.floor(Math.random() * 150000);
-    const emi = isHighRisk ? Math.floor(monthly_income * (0.5 + Math.random() * 0.3)) : Math.floor(monthly_income * (0.1 + Math.random() * 0.3));
-    const credit_card_due = isHighRisk ? 50000 + Math.floor(Math.random() * 150000) : Math.floor(Math.random() * 20000);
-    const total_obligations = emi + credit_card_due;
-
-    // RISK RATIOS
-    const emi_to_income_ratio = Math.round((emi / monthly_income) * 100);
-    const debt_stress_ratio = Math.round((total_obligations / monthly_income) * 100);
-    const credit_utilization = isHighRisk ? 75 + Math.floor(Math.random() * 24) : 10 + Math.floor(Math.random() * 40);
-
-    // BEHAVIORAL SIGNALS
-    const atm_withdrawals = isHighRisk ? 5 + Math.floor(Math.random() * 8) : Math.floor(Math.random() * 3);
-    const spending_change = Math.floor(Math.random() * 60) - 20; // -20% to +40%
-    const spending_instability = isHighRisk ? "High" : isMediumRisk ? "Moderate" : "Low";
-
-    // PAYMENT BEHAVIOR
-    const missed_payments = isHighRisk ? 1 + Math.floor(Math.random() * 4) : 0;
-    const bill_delay_count = isHighRisk ? 2 + Math.floor(Math.random() * 5) : (isMediumRisk ? 1 : 0);
-    const payment_discipline = isHighRisk ? "Erratic" : (isMediumRisk ? "Delayed" : "On-Time");
-    const salary_delay = Math.random() > 0.85 ? "Yes" : "No";
-
-    // FINANCIAL STABILITY
-    const avg_balance = isHighRisk ? Math.floor(monthly_income * 0.2) : Math.floor(monthly_income * 1.5);
-    const balance_drop_ratio = isHighRisk ? 40 + Math.floor(Math.random() * 50) : Math.floor(Math.random() * 15);
-    const liquidity_buffer = avg_balance;
-    const stability_score = isHighRisk ? Math.floor(Math.random() * 40) : 60 + Math.floor(Math.random() * 40);
-
-    // RISK INTELLIGENCE
-    const financial_health_score = isHighRisk ? Math.floor(Math.random() * 40) : 60 + Math.floor(Math.random() * 40);
-    const shock_flag = isHighRisk && Math.random() > 0.5 ? "Yes" : "No";
-    const job_loss = isHighRisk && Math.random() > 0.8 ? "Suspected" : "No";
-    const credit_dependency = credit_utilization > 80 ? "High" : "Normal";
-    const early_risk_flag = (!isHighRisk && debt_stress_ratio > 50) ? "Yes" : "No";
-
-    return {
-      customer_id, age, monthly_income, emi, credit_card_due, emi_to_income_ratio, credit_utilization,
-      missed_payments, salary_delay, job_loss, avg_balance, balance_drop_ratio, atm_withdrawals,
-      spending_change, bill_delay_count, account_tenure, label, total_obligations, debt_stress_ratio,
-      liquidity_buffer, spending_instability, payment_discipline, financial_health_score, shock_flag,
-      credit_dependency, early_risk_flag, stability_score
-    };
-  });
-};
+import { ShieldAlert, Info, TrendingUp, AlertTriangle, Search, Filter, Download, UserMinus, ArrowUpDown, Loader2 } from 'lucide-react';
 
 const ProgressBar = ({ value, type }) => {
   let colorClass = 'bg-cyan-500';
@@ -83,7 +26,7 @@ const PillBadge = ({ value, type }) => {
   }
   
   const isHighRisk = value === "Yes" || value === "High" || value === "Erratic" || value === "High Risk" || value === "Suspected";
-  const isMediumRisk = value === "Medium Risk" || value === "Moderate" || value === "Delayed";
+  const isMediumRisk = value === "Medium Risk" || value === "Moderate" || value === "Delayed" || value === "Medium";
   
   const colorClass = isHighRisk 
     ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' 
@@ -99,14 +42,30 @@ const PillBadge = ({ value, type }) => {
 }
 
 export default function Customers() {
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [riskFilter, setRiskFilter] = useState('All');
   const [shockFilter, setShockFilter] = useState('All');
   
   // Sort State: { key: column_name, direction: 'asc' | 'desc' }
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'risk_score', direction: 'desc' });
 
-  const mockData = useMemo(() => generateMockData(50), []);
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/customers?limit=1000');
+        const data = await response.json();
+        // Backend returns { customers: [...] }
+        setCustomers(data.customers || []);
+      } catch (err) {
+        console.error("Failed to fetch customers:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCustomers();
+  }, []);
 
   const handleSort = (key) => {
     let direction = 'asc';
@@ -118,10 +77,17 @@ export default function Customers() {
 
   const processedData = useMemo(() => {
     // 1. Filter
-    let filtered = mockData.filter(item => {
-      const matchSearch = item.customer_id.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchRisk = riskFilter === 'All' || item.label === riskFilter;
-      const matchShock = shockFilter === 'All' || item.shock_flag === shockFilter;
+    let filtered = customers.filter(item => {
+      const customerId = item.customer_id || "";
+      const matchSearch = customerId.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Backend uses 'High', 'Medium', 'Low'
+      const matchRisk = riskFilter === 'All' || item.risk_band === riskFilter;
+      
+      // Backend uses 1 and 0 for shock_flag
+      const shockVal = item.shock_flag === 1 ? 'Yes' : 'No';
+      const matchShock = shockFilter === 'All' || shockVal === shockFilter;
+      
       return matchSearch && matchRisk && matchShock;
     });
 
@@ -146,7 +112,7 @@ export default function Customers() {
     }
 
     return filtered;
-  }, [mockData, searchTerm, riskFilter, shockFilter, sortConfig]);
+  }, [customers, searchTerm, riskFilter, shockFilter, sortConfig]);
 
   const Th = ({ label, sortKey, align = "left" }) => (
     <th 
@@ -163,7 +129,10 @@ export default function Customers() {
     </th>
   );
 
-  const formatCurrency = (val) => `₹${val.toLocaleString()}`;
+  const formatCurrency = (val) => {
+    if (val === null || val === undefined) return "₹0";
+    return `₹${Number(val).toLocaleString()}`;
+  };
 
   return (
     <div className="flex flex-col h-full space-y-6 animate-in fade-in duration-500 pb-8">
@@ -203,9 +172,9 @@ export default function Customers() {
             className="bg-slate-800/40 border border-slate-700/50 rounded-xl py-1.5 px-3 text-sm text-slate-300 focus:outline-none focus:border-cyan-500/50"
           >
             <option value="All">Risk: All</option>
-            <option value="High Risk">High Risk</option>
-            <option value="Medium Risk">Medium Risk</option>
-            <option value="Healthy">Healthy</option>
+            <option value="High">High Risk</option>
+            <option value="Medium">Medium Risk</option>
+            <option value="Low">Healthy</option>
           </select>
           <select 
             value={shockFilter} 
@@ -240,7 +209,7 @@ export default function Customers() {
                 <Th label="Customer ID" sortKey="customer_id" />
                 <Th label="Age" sortKey="age" align="right" />
                 <Th label="Tenure" sortKey="account_tenure" />
-                <Th label="Label" sortKey="label" />
+                <Th label="Risk Band" sortKey="risk_band" />
                 
                 {/* Income & Obligations */}
                 <Th label="Monthly Income" sortKey="monthly_income" align="right" />
@@ -289,8 +258,8 @@ export default function Customers() {
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-300 text-right">{row.age}</td>
-                    <td className="px-4 py-3 text-sm text-slate-300">{row.account_tenure}</td>
-                    <td className="px-4 py-3 text-sm border-r border-white/5"><PillBadge value={row.label} /></td>
+                    <td className="px-4 py-3 text-sm text-slate-300">{row.account_tenure || 'N/A'}</td>
+                    <td className="px-4 py-3 text-sm border-r border-white/5"><PillBadge value={row.risk_band} /></td>
 
                     {/* Income & Obligations */}
                     <td className="px-4 py-3 text-sm text-slate-300 text-right font-medium">{formatCurrency(row.monthly_income)}</td>

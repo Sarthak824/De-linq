@@ -154,6 +154,12 @@ def extract_signals(row):
         signals.append("Acute hidden distress detected")
     elif row.get("liquidity_pattern") == "P2P-Heavy":
         signals.append("Frequent P2P inflows detected")
+        
+    liq_level = row.get("liquidity_stress_level")
+    if liq_level == "Critical":
+        signals.append("Forced asset liquidation detected")
+    elif row.get("asset_depletion_strategy") == "OD-Reliant":
+        signals.append("Heavy overdraft usage detected")
     
     if not signals: signals.append("No immediate risk signals")
     return signals
@@ -176,6 +182,8 @@ def assign_persona(row):
 
     if row.get("hidden_distress_level") == "High":
         return "Distressed informal borrower"
+    if row.get("liquidity_stress_level") == "Critical":
+        return "Asset-Rich Stressed User"
     if stress == "High" and credit == "High":
         return "Credit Dependent Stressed User"
     if row.get("credit_exposure_level") == "High":
