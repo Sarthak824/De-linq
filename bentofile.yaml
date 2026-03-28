@@ -1,0 +1,12 @@
+service: "src.serving.bento_service:RiskScoringService"
+description: "BentoML service for De-linq XGBoost risk scoring"
+labels:
+  project: "de-linq"
+  model: "xgboost"
+include:
+  - "src/**/*.py"
+  - "artifacts/xgb_model.pkl"
+  - "artifacts/lstm_metadata.json"
+  - "data/output/customer_sequence_scores.csv"
+python:
+  requirements_txt: "./requirements.txt"
