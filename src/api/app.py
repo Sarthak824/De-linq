@@ -24,6 +24,11 @@ from src.interventions.orchestrator import (
     trigger_intervention,
 )
 from src.models.model_config import FEATURE_COLUMNS
+from src.storage.database import (
+    load_customer_analysis,
+    load_customer_predictions as load_customer_predictions_db,
+    load_customer_profiles as load_customer_profiles_db,
+)
 
 PREDICTIONS_PATH = os.path.join(BASE_DIR, "data", "output", "customer_risk_predictions.csv")
 
@@ -186,10 +191,16 @@ class FeatureImportanceResponse(BaseModel):
 
 
 def _load_customer_profiles():
+    profiles_df = load_customer_profiles_db()
+    if not profiles_df.empty:
+        return profiles_df
     return pd.read_csv(INPUT_PATH)
 
 
 def _load_customer_predictions():
+    predictions_df = load_customer_predictions_db()
+    if not predictions_df.empty:
+        return predictions_df
     if not os.path.exists(PREDICTIONS_PATH):
         return pd.DataFrame()
     return pd.read_csv(PREDICTIONS_PATH)
@@ -203,6 +214,10 @@ def _load_intervention_history_df():
 
 
 def _build_customer_analysis_frame():
+    analysis_df = load_customer_analysis()
+    if not analysis_df.empty:
+        return analysis_df
+
     profiles_df = _load_customer_profiles()
     predictions_df = _load_customer_predictions()
 

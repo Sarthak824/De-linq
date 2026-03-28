@@ -2,38 +2,27 @@ import os
 import sys
 
 import joblib
-import pandas as pd
-from sklearn.metrics import classification_report, roc_auc_score
-from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-import xgboost
-from src.models.model_config import FEATURE_COLUMNS
+from src.models.training_utils import (
+    compute_classification_metrics,
+    load_training_frame,
+    save_metrics,
+    split_training_frame,
+    summarize_feature_importance,
+)
 
 print("XGBoost loaded")
 
-# -----------------------------
-# PATH SETUP
-# -----------------------------
-DATA_PATH = os.path.join(BASE_DIR, "data/processed/final_cleaned.csv")
 MODEL_PATH = os.path.join(BASE_DIR, "artifacts/xgb_model.pkl")
 
-# -----------------------------
-# LOAD DATA
-# -----------------------------
-
 def run_training():
-    df = pd.read_csv(DATA_PATH)
-    X = df[FEATURE_COLUMNS]
-    y = df["label"]
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+    _, X, y = load_training_frame()
+    X_train, X_test, y_train, y_test = split_training_frame(X, y)
     print("Train size:", X_train.shape)
     print("Test size:", X_test.shape)
 
@@ -58,21 +47,23 @@ def run_training():
 
     model.fit(X_train, y_train)
 
-    importance = pd.Series(model.feature_importances_, index=X.columns)
-    print("\nFeature Importance:\n", importance.sort_values(ascending=False))
+    importance = summarize_feature_importance(model, X.columns)
+    print("\nFeature Importance:\n", importance)
 
     y_pred = model.predict(X_test)
     y_prob = model.predict_proba(X_test)[:, 1]
+    metrics = compute_classification_metrics(y_test, y_pred, y_prob)
 
     print("\n📊 Classification Report:\n")
-    print(classification_report(y_test, y_pred))
-
-    print("\n🎯 ROC-AUC Score:", roc_auc_score(y_test, y_prob))
+    print(metrics["classification_report"])
+    print("\n🎯 ROC-AUC Score:", metrics["roc_auc"])
 
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
     joblib.dump(model, MODEL_PATH)
+    metrics_path = save_metrics("xgboost", metrics)
 
     print("\n✅ Model saved at:", MODEL_PATH)
+    print("✅ Metrics saved at:", metrics_path)
 
     return model
 

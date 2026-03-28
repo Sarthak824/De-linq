@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timezone
 
 import pandas as pd
+from src.storage.database import append_intervention_event, load_intervention_history as load_intervention_history_db
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 OUTPUT_DIR = os.path.join(BASE_DIR, "data", "output")
@@ -90,11 +91,20 @@ def trigger_intervention(prediction, override_channel=None, override_action=None
     history_df = pd.read_csv(HISTORY_PATH)
     history_df = pd.concat([history_df, pd.DataFrame([event])], ignore_index=True)
     history_df.to_csv(HISTORY_PATH, index=False)
+    append_intervention_event(event)
 
     return event
 
 
 def get_intervention_history(customer_id):
+    database_history_df = load_intervention_history_db(customer_id=customer_id)
+    if not database_history_df.empty:
+        records = database_history_df.to_dict(orient="records")
+        for record in records:
+            if pd.notna(record.get("risk_score")):
+                record["risk_score"] = float(record["risk_score"])
+        return records
+
     _ensure_history_file()
     history_df = pd.read_csv(HISTORY_PATH)
     filtered = history_df[history_df["customer_id"] == customer_id].copy()

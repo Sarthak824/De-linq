@@ -30,7 +30,18 @@ kafka_2.13-3.7.0.tgz
 venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+.mypy_cache/
 .env
 
-kafka_2.13-3.7.0/
 *.tgz
+# Build outputs
+build/
+dist/
+
+# ML artifacts and generated datasets
+artifacts/
+data/raw/
+data/processed/
+data/output/
+data/sequences/

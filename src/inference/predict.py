@@ -14,6 +14,7 @@ from src.intelligence.intent_detector import detect_intents
 from src.models.model_config import FEATURE_COLUMNS
 from src.policy.decision_engine import apply_policy_engine
 from src.persona.persona_builder import generate_personas
+from src.storage.database import save_customer_predictions, save_customer_profiles
 
 MODEL_PATH = os.path.join(BASE_DIR, "artifacts", "xgb_model.pkl")
 INPUT_PATH = os.path.join(BASE_DIR, "data", "processed", "final_cleaned.csv")
@@ -163,6 +164,8 @@ def run_batch_inference(input_path=INPUT_PATH, output_path=OUTPUT_PATH, model_pa
         "recommended_channel",
     ]
     scored_df[output_columns].to_csv(output_path, index=False)
+    save_customer_profiles(df)
+    save_customer_predictions(scored_df[output_columns])
 
     print(f"✅ Batch scoring completed: {scored_df.shape}")
     print(f"📁 Saved to: {output_path}")
