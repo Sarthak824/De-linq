@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+@theme {
+  --color-barclays-blue: #0072CE;
+  --color-barclays-light: #E6F0F8;
+  --color-barclays-bg: #F5F7FA;
+  --color-barclays-text: #1A1A1A;
+  --color-barclays-border: #D0D7DE;
+}
+
+body {
+  background-color: var(--color-barclays-bg);
+  color: var(--color-barclays-text);
+}

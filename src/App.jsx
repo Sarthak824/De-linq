@@ -1,7 +1,7 @@
-import Dashboard from "./Dashboard";
+import PreDelinquencyDashboard from "./PreDelinquencyDashboard";
 
 function App() {
-  return <Dashboard />;
+  return <PreDelinquencyDashboard />;
 }
 
 export default App;
