@@ -48,6 +48,13 @@ def generate_customer(i):
         spending_change = clipped_normal(0.04, 0.10, -0.20, 0.25)
         avg_balance_ratio = clipped_normal(2.1, 0.6, 0.9, 4.0)
         card_due_ratio = clipped_normal(0.14, 0.06, 0.03, 0.30)
+        
+        # Loan structure
+        secured_loans = random.choices([0, 1, 2], [0.7, 0.2, 0.1])[0]
+        personal_loans = random.choices([0, 1], [0.9, 0.1])[0]
+        gold_loans = random.choices([0, 1], [0.95, 0.05])[0]
+        loan_top_up_indicator = np.random.binomial(1, 0.02)
+        
     elif profile == "vulnerable":
         income = random.randint(25000, 160000)
         emi_ratio = clipped_normal(0.36, 0.08, 0.18, 0.55)
@@ -61,6 +68,13 @@ def generate_customer(i):
         spending_change = clipped_normal(-0.06, 0.18, -0.45, 0.30)
         avg_balance_ratio = clipped_normal(1.0, 0.35, 0.25, 1.8)
         card_due_ratio = clipped_normal(0.25, 0.08, 0.08, 0.45)
+        
+        # Loan structure
+        secured_loans = random.choices([0, 1], [0.8, 0.2])[0]
+        personal_loans = random.choices([1, 2, 3], [0.6, 0.3, 0.1])[0]
+        gold_loans = random.choices([0, 1], [0.8, 0.2])[0]
+        loan_top_up_indicator = np.random.binomial(1, 0.15)
+        
     else:
         income = random.randint(18000, 120000)
         emi_ratio = clipped_normal(0.49, 0.10, 0.28, 0.70)
@@ -74,6 +88,12 @@ def generate_customer(i):
         spending_change = clipped_normal(-0.18, 0.20, -0.60, 0.22)
         avg_balance_ratio = clipped_normal(0.42, 0.18, 0.05, 0.95)
         card_due_ratio = clipped_normal(0.34, 0.10, 0.12, 0.60)
+        
+        # Loan structure
+        secured_loans = random.choices([0, 1], [0.9, 0.1])[0]
+        personal_loans = random.choices([2, 3, 4, 5], [0.4, 0.3, 0.2, 0.1])[0]
+        gold_loans = random.choices([0, 1, 2], [0.7, 0.2, 0.1])[0]
+        loan_top_up_indicator = np.random.binomial(1, 0.35)
 
     emi = max(2000, int(income * emi_ratio))
     credit_card_due = max(1000, int(income * card_due_ratio))
@@ -96,6 +116,11 @@ def generate_customer(i):
         "spending_change": round(spending_change, 2),
         "bill_delay_count": int(bill_delay_count),
         "account_tenure": account_tenure,
+        "secured_loans": secured_loans,
+        "personal_loans": personal_loans,
+        "gold_loans": gold_loans,
+        "active_loans": secured_loans + personal_loans + gold_loans,
+        "loan_top_up_indicator": int(loan_top_up_indicator),
     }
 
 

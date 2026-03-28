@@ -14,6 +14,7 @@ from src.intelligence.intent_detector import detect_intents
 from src.models.model_config import FEATURE_COLUMNS
 from src.policy.decision_engine import apply_policy_engine
 from src.persona.persona_builder import generate_personas
+from src.intelligence.exposure_analyzer import analyze_exposure
 from src.storage.database import save_customer_predictions, save_customer_profiles
 
 MODEL_PATH = os.path.join(BASE_DIR, "artifacts", "xgb_model.pkl")
@@ -87,6 +88,11 @@ def score_customers(df, model):
     output_df["top_reason_codes"] = output_df["top_reason_codes"].apply(lambda items: ", ".join(items))
     output_df = generate_personas(output_df)
     output_df = detect_intents(output_df)
+    
+    # 2nd Layer: Exposure Analysis
+    exposure_results = output_df.apply(analyze_exposure, axis=1)
+    output_df = pd.concat([output_df, pd.DataFrame(list(exposure_results))], axis=1)
+    
     output_df = apply_policy_engine(output_df)
     output_df["recommended_intervention"] = output_df.apply(
         lambda row: enrich_customer_decision(row, row["risk_score"])["recommended_intervention"],
@@ -116,6 +122,11 @@ def format_prediction_row(row):
         "policy_action": row.get("policy_action"),
         "policy_priority": row.get("policy_priority"),
         "recommended_channel": row.get("recommended_channel"),
+        "credit_exposure_level": row.get("credit_exposure_level"),
+        "credit_exposure_message": row.get("credit_exposure_message"),
+        "debt_structure": row.get("debt_structure"),
+        "active_loan_summary": row.get("active_loan_summary"),
+        "exposure_score": float(row["exposure_score"]) if pd.notna(row.get("exposure_score")) else 0.0,
     }
 
 

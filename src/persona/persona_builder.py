@@ -86,6 +86,12 @@ def extract_signals(row):
     if pd.isna(delay): delay = 0
     if delay > 0: signals.append("Recent salary delay")
     
+    exp_level = row.get("credit_exposure_level")
+    if exp_level == "High":
+        signals.append("High overall credit exposure")
+    elif row.get("loan_top_up_indicator") == 1:
+        signals.append("Loan top-up usage detected")
+    
     if not signals: signals.append("No immediate risk signals")
     return signals
 
@@ -97,6 +103,8 @@ def assign_persona(row):
     
     if stress == "High" and credit == "High":
         return "Credit Dependent Stressed User"
+    if row.get("credit_exposure_level") == "High":
+        return "Fragile Debt Holder"
     if spending == "Erratic Spending" and stress == "High":
         return "Impulse Spender Under Stress"
     if spending == "High Lifestyle Spender":

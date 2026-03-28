@@ -41,6 +41,14 @@ def run_feature_engineering():
         df["account_tenure"] / 120 + df["avg_balance"] / (df["monthly_income"] + 1)
     ) / 2
 
+    # New 2nd Layer Model: Credit Exposure Analyzer
+    df["credit_exposure_score"] = (
+        (df["active_loans"] / 5) * 0.3
+        + (df["loan_top_up_indicator"] * 0.2)
+        + (df["emi_to_income_ratio"] * 0.3)
+        + (df["credit_utilization"] * 0.2)
+    ).clip(0, 1)
+
     df.to_csv(OUTPUT_PATH, index=False)
 
     print(f"✅ Advanced features created: {df.shape}")

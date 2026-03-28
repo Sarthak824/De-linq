@@ -62,6 +62,12 @@ class CustomerFeatures(BaseModel):
     credit_dependency: float
     early_risk_flag: int
     stability_score: float
+    secured_loans: Optional[int] = 0
+    personal_loans: Optional[int] = 0
+    gold_loans: Optional[int] = 0
+    active_loans: Optional[int] = 0
+    loan_top_up_indicator: Optional[int] = 0
+    credit_exposure_score: Optional[float] = 0.0
 
 
 class PredictionResponse(BaseModel):
@@ -79,6 +85,11 @@ class PredictionResponse(BaseModel):
     policy_action: Optional[str] = None
     policy_priority: Optional[str] = None
     recommended_channel: Optional[str] = None
+    credit_exposure_level: Optional[str] = None
+    credit_exposure_message: Optional[str] = None
+    debt_structure: Optional[str] = None
+    active_loan_summary: Optional[str] = None
+    exposure_score: Optional[float] = 0.0
 
 
 class BatchPredictionRequest(BaseModel):
@@ -250,6 +261,11 @@ def _split_customer_payload(record: dict):
         "policy_action",
         "policy_priority",
         "recommended_channel",
+        "credit_exposure_level",
+        "credit_exposure_message",
+        "debt_structure",
+        "active_loan_summary",
+        "exposure_score",
     }
 
     profile = {}

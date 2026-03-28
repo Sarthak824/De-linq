@@ -38,6 +38,12 @@ PROFILE_COLUMNS = [
     "credit_dependency",
     "early_risk_flag",
     "stability_score",
+    "secured_loans",
+    "personal_loans",
+    "gold_loans",
+    "active_loans",
+    "loan_top_up_indicator",
+    "credit_exposure_score",
 ]
 
 PREDICTION_COLUMNS = [
@@ -55,6 +61,11 @@ PREDICTION_COLUMNS = [
     "policy_action",
     "policy_priority",
     "recommended_channel",
+    "credit_exposure_level",
+    "credit_exposure_message",
+    "debt_structure",
+    "active_loan_summary",
+    "exposure_score",
 ]
 
 INTERVENTION_COLUMNS = [
@@ -119,7 +130,13 @@ def init_database(db_path=None):
                 shock_flag INTEGER,
                 credit_dependency REAL,
                 early_risk_flag INTEGER,
-                stability_score REAL
+                stability_score REAL,
+                secured_loans INTEGER,
+                personal_loans INTEGER,
+                gold_loans INTEGER,
+                active_loans INTEGER,
+                loan_top_up_indicator INTEGER,
+                credit_exposure_score REAL
             )
             """
         )
@@ -140,6 +157,11 @@ def init_database(db_path=None):
                 policy_action TEXT,
                 policy_priority TEXT,
                 recommended_channel TEXT,
+                credit_exposure_level TEXT,
+                credit_exposure_message TEXT,
+                debt_structure TEXT,
+                active_loan_summary TEXT,
+                exposure_score REAL,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
             """

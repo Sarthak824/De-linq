@@ -52,7 +52,14 @@ export default function CustomerDetail() {
           spendingInstability: (profile.spending_instability || 0) * 100,
           shockFlag: profile.shock_flag || 0,
           atmWithdrawals: profile.atm_withdrawals || 0,
-          billDelayCount: profile.bill_delay_count || 0
+          billDelayCount: profile.bill_delay_count || 0,
+
+          // 2nd Layer: Credit Exposure
+          exposureLevel: prediction.credit_exposure_level || "Low",
+          exposureMessage: prediction.credit_exposure_message || "Stable debt structure.",
+          debtStructure: prediction.debt_structure || "Secured",
+          activeLoanSummary: prediction.active_loan_summary || "0 active loans",
+          exposureScore: (prediction.exposure_score || 0) * 100
         });
       } catch (err) {
         // Deterministic Fallback Mock for UX Testing
@@ -89,7 +96,14 @@ export default function CustomerDetail() {
           spendingInstability: (seed % 100),
           shockFlag: seed % 13 === 0 ? 1 : 0,
           atmWithdrawals: seed % 5,
-          billDelayCount: seed % 3
+          billDelayCount: seed % 3,
+
+          // Fallback Exposure Mock
+          exposureLevel: seed % 7 === 0 ? "High" : seed % 3 === 0 ? "Moderate" : "Low",
+          exposureMessage: seed % 7 === 0 ? "High exposure due to multiple unsecured personal loans." : "Stable credit structure.",
+          debtStructure: seed % 7 === 0 ? "Unsecured-Heavy" : "Secured",
+          activeLoanSummary: `${(seed % 5) + 1} active (${seed % 2}S, ${(seed % 3) + 1}P, 0G)`,
+          exposureScore: 20 + (seed % 60)
         });
       } finally {
         setLoading(false);
@@ -234,6 +248,47 @@ export default function CustomerDetail() {
       {/* Tab: Overview (Charts) */}
       {activeTab === 'overview' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Credit Exposure Card */}
+          <div className="bg-slate-900/40 backdrop-blur-md rounded-3xl border border-white/5 p-6 flex flex-col min-h-[300px]">
+            <h3 className="text-xs uppercase tracking-widest text-slate-400 font-bold w-full text-left mb-6 flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-indigo-400" /> Credit Exposure & Debt
+            </h3>
+            <div className="space-y-6 flex-1 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-black text-white">{data.exposureLevel} Exposure</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Classification Level</p>
+                </div>
+                <div className="w-16 h-16 relative">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#818cf8" strokeWidth="8" strokeDasharray="251" strokeDashoffset={251 - (data.exposureScore / 100) * 251} strokeLinecap="round" />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-indigo-300">
+                    {Math.round(data.exposureScore)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
+                <p className="text-xs text-indigo-300 leading-relaxed font-medium italic">
+                  "{data.exposureMessage}"
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-auto">
+                <div className="bg-slate-800/40 p-3 rounded-xl border border-white/5">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Structure</p>
+                  <p className="text-sm font-bold text-slate-200">{data.debtStructure}</p>
+                </div>
+                <div className="bg-slate-800/40 p-3 rounded-xl border border-white/5 overflow-hidden">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Loans</p>
+                  <p className="text-[11px] font-bold text-slate-300 truncate">{data.activeLoanSummary}</p>
+                </div>
+              </div>
+            </div>
+          </div>
           
           {/* Radar Profile */}
           <div className="bg-slate-900/40 backdrop-blur-md rounded-3xl border border-white/5 p-6 flex flex-col items-center">

@@ -21,7 +21,7 @@ def detect_intent(row):
     if (missed_payments >= 2 or bill_delay_count >= 2) and app_activity_flag == 0:
         return "disengaged"
 
-    if salary_delay == 1 or payment_discipline < 0.6 or credit_utilization >= 0.65:
+    if salary_delay == 1 or payment_discipline < 0.6 or credit_utilization >= 0.65 or row.get("credit_exposure_level") == "High":
         return "willing_but_stressed"
 
     return "stable"
