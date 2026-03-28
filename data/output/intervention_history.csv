@@ -1,0 +1,2 @@
+execution_id,customer_id,triggered_at,risk_score,risk_band,intent_label,persona_label,policy_action,policy_priority,recommended_channel,recommended_intervention,delivery_status
+38100332-1e98-49f1-808b-67a85afe3ba9,CUST000000,2026-03-26T20:19:35.700427+00:00,0.6682999730110168,Medium,willing_but_stressed,Moderate User,grace_period_offer,medium,WhatsApp,Offer short grace period,sent
