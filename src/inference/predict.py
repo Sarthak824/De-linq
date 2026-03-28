@@ -88,12 +88,14 @@ def score_customers(df, model):
 
     output_df = pd.concat([output_df, decisions], axis=1)
     output_df["top_reason_codes"] = output_df["top_reason_codes"].apply(lambda items: ", ".join(items))
-    output_df = detect_intents(output_df)
     
     # 2nd Layer: Intelligence Engines (Optimized Batch Processing)
     output_df = batch_analyze_exposure(output_df)
     output_df = batch_analyze_hidden_distress(output_df)
     output_df = batch_analyze_liquidity_stress(output_df)
+
+    # Intent detection depends on the derived intelligence layers.
+    output_df = detect_intents(output_df)
 
     # Generate personas AFTER intelligence engines to include behavioral signals
     output_df = generate_personas(output_df)

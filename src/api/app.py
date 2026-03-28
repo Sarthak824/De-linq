@@ -354,9 +354,14 @@ def health():
 def get_customers(limit: int = 500):
     try:
         analysis_df = _build_customer_analysis_frame().head(limit)
-        # Convert all NaN to None for JSON compatibility
-        analysis_df = analysis_df.where(pd.notnull(analysis_df), None)
-        customers = analysis_df.to_dict(orient="records")
+        customers = []
+        for record in analysis_df.to_dict(orient="records"):
+            customers.append(
+                {
+                    key: (None if pd.isna(value) else value)
+                    for key, value in record.items()
+                }
+            )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
