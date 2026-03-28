@@ -121,6 +121,10 @@ def generate_customer(i):
         "gold_loans": gold_loans,
         "active_loans": secured_loans + personal_loans + gold_loans,
         "loan_top_up_indicator": int(loan_top_up_indicator),
+        "p2p_inflow_count": random.choices([0, 1, 2, 3, 4, 5], [0.5, 0.2, 0.1, 0.1, 0.05, 0.05] if profile == "stable" else [0.1, 0.2, 0.3, 0.2, 0.1, 0.1])[0],
+        "small_deposit_count": random.randint(0, 3) if profile == "stable" else random.randint(3, 10),
+        "days_before_emi_inflow": random.randint(5, 25) if profile == "stable" else random.randint(0, 5),
+        "informal_borrowing_indicator": np.random.binomial(1, 0.05 if profile == "stable" else 0.4),
     }
 
 

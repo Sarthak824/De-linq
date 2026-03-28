@@ -59,7 +59,14 @@ export default function CustomerDetail() {
           exposureMessage: prediction.credit_exposure_message || "Stable debt structure.",
           debtStructure: prediction.debt_structure || "Secured",
           activeLoanSummary: prediction.active_loan_summary || "0 active loans",
-          exposureScore: (prediction.exposure_score || 0) * 100
+          exposureScore: (prediction.exposure_score || 0) * 100,
+
+          // 2nd Layer: Hidden Distress
+          distressLevel: prediction.hidden_distress_level || "Low",
+          distressMessage: prediction.hidden_distress_message || "Stable financial behavior.",
+          liquidityPattern: prediction.liquidity_pattern || "Stable",
+          patchworkIndex: (prediction.patchwork_index || 0) * 100,
+          emiBuffer: prediction.emi_buffer_days || 0
         });
       } catch (err) {
         // Deterministic Fallback Mock for UX Testing
@@ -103,7 +110,14 @@ export default function CustomerDetail() {
           exposureMessage: seed % 7 === 0 ? "High exposure due to multiple unsecured personal loans." : "Stable credit structure.",
           debtStructure: seed % 7 === 0 ? "Unsecured-Heavy" : "Secured",
           activeLoanSummary: `${(seed % 5) + 1} active (${seed % 2}S, ${(seed % 3) + 1}P, 0G)`,
-          exposureScore: 20 + (seed % 60)
+          exposureScore: 20 + (seed % 60),
+
+          // Fallback Distress Mock
+          distressLevel: seed % 5 === 0 ? "High" : seed % 3 === 0 ? "Moderate" : "Low",
+          distressMessage: seed % 5 === 0 ? "Acute hidden distress detected; frequent P2P transfers before EMI." : "Organic money movement.",
+          liquidityPattern: seed % 5 === 0 ? "P2P-Heavy" : seed % 3 === 0 ? "Fragmented" : "Stable",
+          patchworkIndex: 10 + (seed % 70),
+          emiBuffer: seed % 5 === 0 ? 1 : 15
         });
       } finally {
         setLoading(false);
@@ -249,42 +263,45 @@ export default function CustomerDetail() {
       {activeTab === 'overview' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* Credit Exposure Card */}
+          {/* Hidden Distress Card */}
           <div className="bg-slate-900/40 backdrop-blur-md rounded-3xl border border-white/5 p-6 flex flex-col min-h-[300px]">
             <h3 className="text-xs uppercase tracking-widest text-slate-400 font-bold w-full text-left mb-6 flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-indigo-400" /> Credit Exposure & Debt
+              <Zap className="w-4 h-4 text-amber-400" /> Coping & Liquidity
             </h3>
             <div className="space-y-6 flex-1 flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-2xl font-black text-white">{data.exposureLevel} Exposure</p>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Classification Level</p>
+                  <p className="text-2xl font-black text-white">{data.distressLevel} Distress</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1">Behavioral Detection</p>
                 </div>
                 <div className="w-16 h-16 relative">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                     <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="#818cf8" strokeWidth="8" strokeDasharray="251" strokeDashoffset={251 - (data.exposureScore / 100) * 251} strokeLinecap="round" />
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#fbbf24" strokeWidth="8" strokeDasharray="251" strokeDashoffset={251 - (data.patchworkIndex / 100) * 251} strokeLinecap="round" />
                   </svg>
-                  <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-indigo-300">
-                    {Math.round(data.exposureScore)}
+                  <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-amber-300">
+                    {Math.round(data.patchworkIndex)}
                   </div>
                 </div>
               </div>
 
-              <div className="p-4 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl">
-                <p className="text-xs text-indigo-300 leading-relaxed font-medium italic">
-                  "{data.exposureMessage}"
+              <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-amber-500/10 blur-2xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
+                <p className="text-xs text-amber-200 leading-relaxed font-medium italic relative z-10">
+                  "{data.distressMessage}"
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mt-auto">
                 <div className="bg-slate-800/40 p-3 rounded-xl border border-white/5">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Structure</p>
-                  <p className="text-sm font-bold text-slate-200">{data.debtStructure}</p>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Pattern</p>
+                  <p className={`text-sm font-bold ${data.liquidityPattern === 'Stable' ? 'text-emerald-400' : 'text-amber-400'}`}>{data.liquidityPattern}</p>
                 </div>
-                <div className="bg-slate-800/40 p-3 rounded-xl border border-white/5 overflow-hidden">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Loans</p>
-                  <p className="text-[11px] font-bold text-slate-300 truncate">{data.activeLoanSummary}</p>
+                <div className="bg-slate-800/40 p-3 rounded-xl border border-white/5">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">EMI Buffer</p>
+                  <p className={`text-sm font-bold ${data.emiBuffer <= 1 ? 'text-rose-400 animate-pulse' : 'text-slate-200'}`}>
+                    {data.emiBuffer} Days
+                  </p>
                 </div>
               </div>
             </div>

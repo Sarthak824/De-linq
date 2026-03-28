@@ -15,6 +15,7 @@ from src.models.model_config import FEATURE_COLUMNS
 from src.policy.decision_engine import apply_policy_engine
 from src.persona.persona_builder import generate_personas
 from src.intelligence.exposure_analyzer import analyze_exposure
+from src.intelligence.hidden_distress_engine import analyze_hidden_distress
 from src.storage.database import save_customer_predictions, save_customer_profiles
 
 MODEL_PATH = os.path.join(BASE_DIR, "artifacts", "xgb_model.pkl")
@@ -93,6 +94,10 @@ def score_customers(df, model):
     exposure_results = output_df.apply(analyze_exposure, axis=1)
     output_df = pd.concat([output_df, pd.DataFrame(list(exposure_results))], axis=1)
     
+    # 2nd Layer: Hidden Distress Analysis
+    distress_results = output_df.apply(analyze_hidden_distress, axis=1)
+    output_df = pd.concat([output_df, pd.DataFrame(list(distress_results))], axis=1)
+    
     output_df = apply_policy_engine(output_df)
     output_df["recommended_intervention"] = output_df.apply(
         lambda row: enrich_customer_decision(row, row["risk_score"])["recommended_intervention"],
@@ -127,6 +132,11 @@ def format_prediction_row(row):
         "debt_structure": row.get("debt_structure"),
         "active_loan_summary": row.get("active_loan_summary"),
         "exposure_score": float(row["exposure_score"]) if pd.notna(row.get("exposure_score")) else 0.0,
+        "hidden_distress_level": row.get("hidden_distress_level"),
+        "hidden_distress_message": row.get("hidden_distress_message"),
+        "liquidity_pattern": row.get("liquidity_pattern"),
+        "patchwork_index": float(row["patchwork_index"]) if pd.notna(row.get("patchwork_index")) else 0.0,
+        "emi_buffer_days": int(row["emi_buffer_days"]) if pd.notna(row.get("emi_buffer_days")) else 0,
     }
 
 
@@ -173,6 +183,16 @@ def run_batch_inference(input_path=INPUT_PATH, output_path=OUTPUT_PATH, model_pa
         "policy_action",
         "policy_priority",
         "recommended_channel",
+        "credit_exposure_level",
+        "credit_exposure_message",
+        "debt_structure",
+        "active_loan_summary",
+        "exposure_score",
+        "hidden_distress_level",
+        "hidden_distress_message",
+        "liquidity_pattern",
+        "patchwork_index",
+        "emi_buffer_days",
     ]
     existing_columns = [col for col in output_columns if col in scored_df.columns]
     scored_df[existing_columns].to_csv(output_path, index=False)

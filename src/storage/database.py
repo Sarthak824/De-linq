@@ -162,6 +162,11 @@ def init_database(db_path=None):
                 debt_structure TEXT,
                 active_loan_summary TEXT,
                 exposure_score REAL,
+                hidden_distress_level TEXT,
+                hidden_distress_message TEXT,
+                liquidity_pattern TEXT,
+                patchwork_index REAL,
+                emi_buffer_days INTEGER,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
             """

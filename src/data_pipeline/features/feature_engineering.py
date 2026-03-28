@@ -49,6 +49,14 @@ def run_feature_engineering():
         + (df["credit_utilization"] * 0.2)
     ).clip(0, 1)
 
+    # 2nd Layer Model: Hidden Distress Behavior Engine
+    df["hidden_distress_score"] = (
+        (df["p2p_inflow_count"] / 5) * 0.3
+        + (df["small_deposit_count"] / 10) * 0.2
+        + (1 - (df["days_before_emi_inflow"] / 25)) * 0.4
+        + (df["informal_borrowing_indicator"] * 0.1)
+    ).clip(0, 1)
+
     df.to_csv(OUTPUT_PATH, index=False)
 
     print(f"✅ Advanced features created: {df.shape}")

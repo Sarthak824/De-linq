@@ -91,6 +91,12 @@ def extract_signals(row):
         signals.append("High overall credit exposure")
     elif row.get("loan_top_up_indicator") == 1:
         signals.append("Loan top-up usage detected")
+        
+    distress_level = row.get("hidden_distress_level")
+    if distress_level == "High":
+        signals.append("Acute hidden distress detected")
+    elif row.get("liquidity_pattern") == "P2P-Heavy":
+        signals.append("Frequent P2P inflows detected")
     
     if not signals: signals.append("No immediate risk signals")
     return signals
@@ -101,6 +107,8 @@ def assign_persona(row):
     spending = row.get("spending_behavior", "Stable Spender")
     risk = row.get("risk_level", "Moderate")
     
+    if row.get("hidden_distress_level") == "High":
+        return "Distressed informal borrower"
     if stress == "High" and credit == "High":
         return "Credit Dependent Stressed User"
     if row.get("credit_exposure_level") == "High":

@@ -90,6 +90,11 @@ class PredictionResponse(BaseModel):
     debt_structure: Optional[str] = None
     active_loan_summary: Optional[str] = None
     exposure_score: Optional[float] = 0.0
+    hidden_distress_level: Optional[str] = None
+    hidden_distress_message: Optional[str] = None
+    liquidity_pattern: Optional[str] = None
+    patchwork_index: Optional[float] = 0.0
+    emi_buffer_days: Optional[int] = 0
 
 
 class BatchPredictionRequest(BaseModel):
@@ -266,6 +271,11 @@ def _split_customer_payload(record: dict):
         "debt_structure",
         "active_loan_summary",
         "exposure_score",
+        "hidden_distress_level",
+        "hidden_distress_message",
+        "liquidity_pattern",
+        "patchwork_index",
+        "emi_buffer_days",
     }
 
     profile = {}

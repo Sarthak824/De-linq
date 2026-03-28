@@ -9,13 +9,15 @@ def detect_intent(row):
     job_loss = row.get("job_loss", 0)
     credit_utilization = row.get("credit_utilization", 0)
     app_activity_flag = row.get("app_activity_flag")
+    balance_drop_ratio = row.get("balance_drop_ratio", 0)
+    emi_to_income_ratio = row.get("emi_to_income_ratio", 0)
 
     if pd.isna(payment_discipline):
         payment_discipline = 1.0
     if pd.isna(app_activity_flag):
         app_activity_flag = 1
 
-    if job_loss == 1 or (missed_payments >= 3 and credit_utilization >= 0.8):
+    if job_loss == 1 or balance_drop_ratio >= 0.5 or emi_to_income_ratio >= 0.6 or row.get("hidden_distress_level") == "High":
         return "high_distress"
 
     if (missed_payments >= 2 or bill_delay_count >= 2) and app_activity_flag == 0:
