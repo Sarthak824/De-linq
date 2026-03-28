@@ -3,18 +3,23 @@ import { Link } from 'react-router-dom';
 import { ShieldAlert, Info, TrendingUp, AlertTriangle, Search, Filter, Download, UserMinus, ArrowUpDown, Loader2 } from 'lucide-react';
 
 const ProgressBar = ({ value, type }) => {
+  // Normalize value to 0-100 scale if it's currently 0-1
+  const numericValue = Number(value) || 0;
+  const displayValue = numericValue <= 1 && numericValue > 0 ? (numericValue * 100) : numericValue;
+  const roundedValue = Math.min(100, Math.max(0, Number(displayValue.toFixed(1))));
+
   let colorClass = 'bg-cyan-500';
   if (type === 'health' || type === 'stability') {
-    colorClass = value < 40 ? 'bg-rose-500' : value < 70 ? 'bg-amber-500' : 'bg-emerald-500';
+    colorClass = roundedValue < 40 ? 'bg-rose-500' : roundedValue < 70 ? 'bg-amber-500' : 'bg-emerald-500';
   } else if (type === 'utilization') {
-    colorClass = value > 80 ? 'bg-rose-500' : value > 50 ? 'bg-amber-500' : 'bg-emerald-500';
+    colorClass = roundedValue > 80 ? 'bg-rose-500' : roundedValue > 50 ? 'bg-amber-500' : 'bg-emerald-500';
   }
 
   return (
     <div className="flex items-center gap-2">
-      <span className="w-8 text-right font-medium">{value}{type === 'utilization' ? '%' : ''}</span>
-      <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden flex-shrink-0">
-        <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
+      <span className="w-10 text-right font-mono text-[10px] text-slate-400">{roundedValue}{type === 'utilization' ? '%' : ''}</span>
+      <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden flex-shrink-0">
+        <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${roundedValue}%` }} />
       </div>
     </div>
   );
@@ -34,9 +39,11 @@ const PillBadge = ({ value, type }) => {
       ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' 
       : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       
+  const displayValue = typeof value === 'number' ? value.toFixed(1) : value;
+
   return (
     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${colorClass}`}>
-      {value}
+      {displayValue}
     </span>
   );
 }
@@ -114,13 +121,18 @@ export default function Customers() {
     return filtered;
   }, [customers, searchTerm, riskFilter, shockFilter, sortConfig]);
 
-  const Th = ({ label, sortKey, align = "left" }) => (
+  const Th = ({ label, sortKey, align = "left", tooltip }) => (
     <th 
-      className={`px-4 py-3 text-xs font-bold text-slate-300 uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-slate-700/50 transition-colors ${align === 'right' ? 'text-right' : 'text-left'}`}
+      className={`px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap cursor-pointer hover:bg-white/5 transition-all group ${align === 'right' ? 'text-right' : 'text-left'}`}
       onClick={() => handleSort(sortKey)}
     >
-      <div className={`flex items-center gap-1 ${align === 'right' ? 'justify-end' : ''}`}>
+      <div className={`flex items-center gap-1.5 ${align === 'right' ? 'justify-end' : ''} relative`}>
         {label}
+        {tooltip && (
+          <div className="opacity-0 group-hover:opacity-100 absolute top-full left-0 mt-2 w-48 p-3 bg-slate-900 border border-white/10 rounded-xl shadow-2xl pointer-events-none transition-all z-[100] transform -translate-y-1 group-hover:translate-y-0">
+            <p className="normal-case text-[10px] leading-relaxed font-medium text-slate-300 tracking-tight whitespace-normal">{tooltip}</p>
+          </div>
+        )}
         {sortConfig.key === sortKey && (
           <ArrowUpDown className={`w-3 h-3 ${sortConfig.direction === 'asc' ? 'text-cyan-400' : 'text-cyan-400 rotate-180'} transition-transform`} />
         )}
@@ -218,9 +230,9 @@ export default function Customers() {
                 <Th label="Total Oblig." sortKey="total_obligations" align="right" />
                 
                 {/* Risk Ratios */}
-                <Th label="EMI / Income" sortKey="emi_to_income_ratio" align="right" />
-                <Th label="Debt Stress" sortKey="debt_stress_ratio" align="right" />
-                <Th label="Credit Util." sortKey="credit_utilization" />
+                <Th label="EMI / Income" sortKey="emi_to_income_ratio" align="right" tooltip="Relationship between fixed monthly installments and base income. >45% is critical." />
+                <Th label="Debt Stress" sortKey="debt_stress_ratio" align="right" tooltip="Composite stress based on credit cards, personal loans, and buy-now-pay-later exposure." />
+                <Th label="Credit Util." sortKey="credit_utilization" tooltip="Percent of limit used across all active cards. High utilization is a primary distress signal." />
                 
                 {/* Behavioral Signals */}
                 <Th label="ATM W/D" sortKey="atm_withdrawals" align="right" />
@@ -240,10 +252,10 @@ export default function Customers() {
                 <Th label="Stability Score" sortKey="stability_score" />
 
                 {/* Risk Intelligence */}
-                <Th label="Health Score" sortKey="financial_health_score" />
-                <Th label="Shock Flag" sortKey="shock_flag" />
-                <Th label="Job Loss" sortKey="job_loss" />
-                <Th label="Credit Dep." sortKey="credit_dependency" />
+                <Th label="Health Score" sortKey="financial_health_score" tooltip="Overall financial wellness score. Derived from stability, discipline, and income security." />
+                <Th label="Coping" sortKey="coping_index" align="right" tooltip="Measures liquidity resilience—how long the customer can survive a sudden stop in income." />
+                <Th label="Exposure" sortKey="exposure_index" align="right" tooltip="Total risk exposure based on secondary borrowing and P2P dependency." />
+                <Th label="Asset Util." sortKey="asset_utilization" align="right" tooltip="Ratio of liquid assets to active debt. Lower values indicate higher fragile liquidity." />
                 <Th label="Early Risk" sortKey="early_risk_flag" />
               </tr>
             </thead>
@@ -252,10 +264,18 @@ export default function Customers() {
                 processedData.map((row) => (
                   <tr key={row.customer_id} className="hover:bg-slate-800/40 transition-colors cursor-default whitespace-nowrap">
                     {/* Customer Profile */}
-                    <td className="px-4 py-3 text-sm font-mono border-r border-white/5">
-                      <Link to={`/customer/${row.customer_id}`} className="text-cyan-400 hover:text-cyan-300 hover:underline transition-colors">
-                        {row.customer_id}
-                      </Link>
+                    <td className="px-4 py-3 text-sm font-mono border-r border-white/5 relative group/cid">
+                      <div className="flex flex-col gap-1">
+                        <Link to={`/customer/${row.customer_id}`} className="text-cyan-400 hover:text-cyan-300 hover:underline transition-colors font-bold">
+                          {row.customer_id}
+                        </Link>
+                        {row.risk_score * 100 > 85 && (
+                          <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-tighter text-rose-400 animate-pulse bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20 w-fit">
+                            <ShieldAlert className="w-2.5 h-2.5" />
+                            Priority Caller
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-300 text-right">{row.age}</td>
                     <td className="px-4 py-3 text-sm text-slate-300">{row.account_tenure || 'N/A'}</td>
@@ -269,10 +289,14 @@ export default function Customers() {
 
                     {/* Risk Ratios */}
                     <td className="px-4 py-3 text-sm text-right">
-                      <span className={row.emi_to_income_ratio > 40 ? 'text-rose-400 font-bold' : 'text-slate-300'}>{row.emi_to_income_ratio}%</span>
+                      <span className={row.emi_to_income_ratio > 40 ? 'text-rose-400 font-bold' : 'text-slate-300'}>
+                        {Number(row.emi_to_income_ratio || 0).toFixed(1)}%
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-right">
-                      <span className={row.debt_stress_ratio > 60 ? 'text-rose-400 font-bold' : 'text-slate-300'}>{row.debt_stress_ratio}%</span>
+                      <span className={row.debt_stress_ratio > 60 ? 'text-rose-400 font-bold' : 'text-slate-300'}>
+                        {Number(row.debt_stress_ratio || 0).toFixed(1)}%
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-sm border-r border-white/5">
                       <ProgressBar value={row.credit_utilization} type="utilization" />
@@ -284,7 +308,7 @@ export default function Customers() {
                     </td>
                     <td className="px-4 py-3 text-sm text-right">
                       <span className={row.spending_change > 20 ? 'text-rose-400 font-bold' : row.spending_change < -10 ? 'text-emerald-400' : 'text-slate-300'}>
-                        {row.spending_change > 0 ? '+' : ''}{row.spending_change}%
+                        {row.spending_change > 0 ? '+' : ''}{Number(row.spending_change || 0).toFixed(1)}%
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm border-r border-white/5"><PillBadge value={row.spending_instability} /></td>
@@ -302,7 +326,7 @@ export default function Customers() {
                     {/* Financial Stability */}
                     <td className="px-4 py-3 text-sm text-slate-300 text-right font-medium">{formatCurrency(row.avg_balance)}</td>
                     <td className="px-4 py-3 text-sm text-right">
-                      <span className={row.balance_drop_ratio > 30 ? 'text-rose-400 font-bold' : 'text-slate-300'}>{row.balance_drop_ratio}%</span>
+                      <span className={row.balance_drop_ratio > 30 ? 'text-rose-400 font-bold' : 'text-slate-300'}>{Number(row.balance_drop_ratio || 0).toFixed(1)}%</span>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-300 text-right">{formatCurrency(row.liquidity_buffer)}</td>
                     <td className="px-4 py-3 text-sm border-r border-white/5">

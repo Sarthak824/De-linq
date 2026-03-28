@@ -1,22 +1,20 @@
 // src/components/layout/Sidebar.jsx
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Users, ShieldAlert, Activity, FileText } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, Activity, FileText, HelpCircle } from "lucide-react";
 
 const navItems = [
   { name: "Dashboard", path: "/", icon: LayoutDashboard },
   { name: "Customers", path: "/customers", icon: Users },
-  { name: "Risk Intelligence", path: "/risk-intelligence", icon: ShieldAlert },
-  { name: "Interventions", path: "/interventions", icon: Activity },
-  { name: "Reports", path: "/reports", icon: FileText },
+  { name: "Contact Us", path: "/contact", icon: HelpCircle },
 ];
 
 export default function Sidebar() {
   return (
     <div className="w-64 h-screen bg-slate-900/80 backdrop-blur-xl border-r border-slate-700/50 flex flex-col hidden md:flex z-20">
       <div className="p-6">
-        <h1 className="text-xl font-bold text-white tracking-wider flex items-center gap-2">
+        <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
           <ShieldAlert className="w-6 h-6 text-cyan-400" />
-          <span>DE-LINQ</span>
+          <span>Delinq<span className="text-cyan-400">AI</span></span>
         </h1>
       </div>
       <nav className="flex-1 px-4 space-y-2 mt-4">

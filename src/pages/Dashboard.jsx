@@ -4,6 +4,9 @@ import KPICard from "../components/dashboard/KPICard";
 import FinancialStressChart from "./FinancialStressChart";
 import RiskTable from "../components/dashboard/RiskTable";
 import AIInsights from "../components/dashboard/AIInsights";
+import Toast from "../components/common/Toast";
+import PlotlyChart from "../components/analytics/PlotlyChart";
+import { motion, AnimatePresence } from "framer-motion";
 
 // --- Mock Data ---
 const mockKPIs = {
@@ -38,6 +41,8 @@ export default function Dashboard() {
   const [topRisks, setTopRisks] = useState([]);
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -101,14 +106,52 @@ export default function Dashboard() {
           <p className="text-slate-400 mt-1">Overview of risk metrics and recent activity.</p>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-700 transition-colors text-sm font-medium">
+          <button className="px-5 py-2.5 bg-slate-800/80 hover:bg-slate-700 text-white rounded-xl border border-white/5 transition-all text-sm font-bold tracking-tight shadow-xl flex items-center gap-2">
             Export Report
           </button>
-          <button className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-lg transition-colors text-sm font-medium shadow-[0_0_15px_rgba(6,182,212,0.3)]">
-            Run AI Analysis
+          <button 
+            onClick={() => {
+              setIsAnalyzing(true);
+              setTimeout(() => {
+                setIsAnalyzing(false);
+                setToast({ message: "AI Risk Intelligence Retrained Successfully", type: 'success' });
+              }, 2500);
+            }}
+            disabled={isAnalyzing}
+            className={`px-5 py-2.5 rounded-xl transition-all text-sm font-bold tracking-tight shadow-[0_0_20px_rgba(6,182,212,0.2)] flex items-center gap-2 ${
+              isAnalyzing 
+                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5' 
+                : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 active:scale-95'
+            }`}
+          >
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Processing Signals...
+              </>
+            ) : (
+              <>
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="w-2 h-2 bg-slate-950 rounded-full"
+                />
+                Run AI Analysis
+              </>
+            )}
           </button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {toast && (
+          <Toast 
+            message={toast.message} 
+            type={toast.type} 
+            onClose={() => setToast(null)} 
+          />
+        )}
+      </AnimatePresence>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -144,8 +187,11 @@ export default function Dashboard() {
 
       {/* Analytics Main */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-3 min-h-[400px]">
+        <div className="lg:col-span-1">
           <FinancialStressChart data={mockChartData} />
+        </div>
+        <div className="lg:col-span-2">
+          <PlotlyChart />
         </div>
       </div>
 

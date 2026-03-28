@@ -5,7 +5,7 @@ import Customers from "./pages/Customers";
 import CustomerDetail from "./pages/CustomerDetail";
 import RiskIntelligence from "./pages/RiskIntelligence";
 import Interventions from "./pages/Interventions";
-import Reports from "./pages/Reports";
+import Contact from "./pages/Contact";
 
 function App() {
   return (
@@ -15,9 +15,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="customers" element={<Customers />} />
           <Route path="customer/:id" element={<CustomerDetail />} />
-          <Route path="risk-intelligence" element={<RiskIntelligence />} />
-          <Route path="interventions" element={<Interventions />} />
-          <Route path="reports" element={<Reports />} />
+          <Route path="contact" element={<Contact />} />
         </Route>
       </Routes>
     </BrowserRouter>

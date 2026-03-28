@@ -73,7 +73,13 @@ export default function CustomerDetail() {
           liquidityStressMessage: prediction.liquidity_stress_message || "Assets remain intact.",
           depletionStrategy: prediction.asset_depletion_strategy || "Stable",
           depletionIndex: (prediction.depletion_index || 0) * 100,
-          odUsage: prediction.od_usage_pct || 0
+          odUsage: prediction.od_usage_pct || 0,
+
+          // Intervention Metrics (Mocked for professional demo)
+          smsCount: Math.floor(Math.random() * 5) + 1,
+          appCount: Math.floor(Math.random() * 8) + 2,
+          whatsappCount: Math.floor(Math.random() * 3) + 1,
+          isPriorityCaller: ((prediction.risk_score || 0.5) * 100) > 85
         });
       } catch (err) {
         console.error("Failed to load customer:", err);
@@ -163,6 +169,12 @@ export default function CustomerDetail() {
                 <Crosshair className="w-3.5 h-3.5 text-purple-400" />
                 Intent: <span className="text-purple-400">{data.intent.replace(/_/g, " ")}</span>
               </span>
+              {data.isPriorityCaller && (
+                <span className="px-3 py-1 bg-rose-500 text-white rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5 shadow-[0_0_15px_rgba(244,63,94,0.4)] animate-bounce ml-2">
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  Priority Caller
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -239,8 +251,9 @@ export default function CustomerDetail() {
 
       {/* Tabs Menu */}
       <div className="flex border-b border-white/10 gap-8 overflow-x-auto custom-scrollbar pt-4">
-        <button onClick={() => setActiveTab('overview')} className={`pb-4 text-sm font-bold uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${activeTab === 'overview' ? 'text-cyan-400 border-cyan-400' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>Vis Intelligence</button>
+        <button onClick={() => setActiveTab('overview')} className={`pb-4 text-sm font-bold uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${activeTab === 'overview' ? 'text-cyan-400 border-cyan-400' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>Risk Intelligence</button>
         <button onClick={() => setActiveTab('details')} className={`pb-4 text-sm font-bold uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${activeTab === 'details' ? 'text-cyan-400 border-cyan-400' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>Full Data Matrix</button>
+        <button onClick={() => setActiveTab('interventions')} className={`pb-4 text-sm font-bold uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${activeTab === 'interventions' ? 'text-cyan-400 border-cyan-400' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>Interventions</button>
       </div>
 
       {/* Tab: Overview (Charts) */}
@@ -474,20 +487,124 @@ export default function CustomerDetail() {
             <Row label="EMI-to-Income Ratio" value={`${data.emiRatio.toFixed(1)}%`} highlight={data.emiRatio > 40} />
             <Row label="Credit Utilization" value={`${data.creditUtil.toFixed(1)}%`} highlight={data.creditUtil > 70} />
           </DetailCard>
-
+  
           <DetailCard title="Behavior & Volatility">
             <Row label="Financial Health Score" value={`${data.healthScore.toFixed(0)}/100`} />
             <Row label="Spending Instability" value={`${data.spendingInstability.toFixed(1)}%`} highlight={data.spendingInstability > 40} />
             <Row label="ATM Withdrawals" value={data.atmWithdrawals} />
             <Row label="Avg Bank Balance" value={`₹${data.avgBalance.toLocaleString()}`} />
           </DetailCard>
-
+  
           <DetailCard title="Critical Flags" alert>
             <Row label="Salary Delay Flag" value={data.salaryDelay === 1 ? "TRIGGERED" : "Clear"} highlight={data.salaryDelay === 1} />
             <Row label="Job Loss Signal" value={data.jobLoss === 1 ? "DETECTED" : "Clear"} highlight={data.jobLoss === 1} />
             <Row label="Financial Shock" value={data.shockFlag === 1 ? "SHOCK OCCURRED" : "Clear"} highlight={data.shockFlag === 1} />
             <Row label="Late Bill Payments" value={data.billDelayCount} highlight={data.billDelayCount > 0} />
           </DetailCard>
+        </motion.div>
+      )}
+
+      {/* Tab: Interventions Approach */}
+      {activeTab === 'interventions' && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-slate-900/40 backdrop-blur-md p-8 rounded-3xl border border-white/5">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <ShieldAlert className="w-6 h-6 text-cyan-400" />
+                Our Strategic Approach
+              </h3>
+              <div className="space-y-4 text-slate-400 leading-relaxed text-sm">
+                <p>
+                  DelinqAI uses a <span className="text-cyan-400 font-bold">Behavioral-First</span> intervention strategy. Instead of waiting for a missed payment (DPD), we monitor 84+ real-time signals including salary fragmentation, P2P dependency, and spending volatility.
+                </p>
+                <p>
+                  When a customer enters a high-risk band, our system automatically selects the <span className="text-emerald-400 font-bold">Least Intrusive Effective Intervention</span>. This preserves the customer relationship while securing bank assets.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                    <p className="text-white font-bold mb-2 text-xs uppercase tracking-widest">Pre-Emptive</p>
+                    <p className="text-[11px]">Identifying distress 15-20 days before EMI date through informal borrowing patterns.</p>
+                  </div>
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                    <p className="text-white font-bold mb-2 text-xs uppercase tracking-widest">Nudge-Based</p>
+                    <p className="text-[11px]">Deploying educational content and liquidity-unlocking tips rather than collections calls.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-900/40 backdrop-blur-md p-8 rounded-3xl border border-white/5">
+              <h3 className="text-lg font-bold text-white mb-6">Current Case Strategy: <span className="text-cyan-400">{data.intervention}</span></h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex gap-4 items-start p-4 bg-cyan-500/5 rounded-2xl border border-cyan-500/10">
+                  <div className="p-2 bg-cyan-500/20 rounded-lg"><Activity className="w-5 h-5 text-cyan-400" /></div>
+                  <div>
+                    <p className="font-bold text-white text-sm">Automated Decisioning</p>
+                    <p className="text-xs text-slate-400 mt-1">Based on the risk score of {Math.round(data.riskScore)} and {data.reasons.length} active triggers, the system has locked in the "{data.intervention}" protocol.</p>
+                  </div>
+                </div>
+                {data.isPriorityCaller && (
+                  <div className="flex gap-4 items-start p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20">
+                    <div className="p-2 bg-rose-500/20 rounded-lg"><ShieldAlert className="w-5 h-5 text-rose-400" /></div>
+                    <div>
+                      <p className="font-bold text-rose-400 text-sm">Priority Caller Flag</p>
+                      <p className="text-xs text-slate-400 mt-1">Critical risk threshold exceeded. This customer is flagged for immediate concave agent callback.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Communication Reach */}
+              <div className="mt-8 pt-8 border-t border-white/5">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-6">Communication reach (Last 30 Days)</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-center transition-all hover:bg-white/10">
+                    <p className="text-2xl font-black text-white">{data.smsCount}</p>
+                    <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">SMS Sent</p>
+                  </div>
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-center transition-all hover:bg-white/10">
+                    <p className="text-2xl font-black text-white">{data.appCount}</p>
+                    <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">App Push</p>
+                  </div>
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-center transition-all hover:bg-white/10">
+                    <p className="text-2xl font-black text-white">{data.whatsappCount}</p>
+                    <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">WhatsApp</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-1">
+            <div className="bg-slate-900/40 backdrop-blur-md p-6 rounded-3xl border border-white/5 h-full">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-8 border-b border-white/5 pb-3">Intervention Scale</h3>
+              <div className="space-y-8 relative">
+                {/* Visual Scale Line */}
+                <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-gradient-to-b from-emerald-500 via-amber-500 to-rose-500 opacity-20" />
+                
+                {[
+                  { level: "Critical", action: "Legal Notice / Asset Recovery", color: "text-rose-500", dot: "bg-rose-500" },
+                  { level: "High", action: "Restructuring / EMI Stay Offer", color: "text-orange-500", dot: "bg-orange-500" },
+                  { level: "Elevated", action: "Priority Concierge Callback", color: "text-amber-500", dot: "bg-amber-500" },
+                  { level: "Moderate", action: "Smart Nudge / SMS Campaign", color: "text-cyan-500", dot: "bg-cyan-500" },
+                  { level: "Low", action: "Educational Content / Loyalty", color: "text-emerald-500", dot: "bg-emerald-500" }
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-6 items-start relative z-10">
+                    <div className={`w-2 h-2 rounded-full ${item.dot} mt-1.5 shadow-[0_0_10px_rgba(0,0,0,0.5)]`} />
+                    <div className="flex-1">
+                      <p className={`text-[10px] font-black uppercase tracking-tighter ${item.color}`}>{item.level}</p>
+                      <p className="text-xs text-white font-bold mt-0.5">{item.action}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-12 p-4 bg-white/5 rounded-2xl border border-white/10 text-[10px] text-slate-500 leading-tight">
+                <Info className="w-4 h-4 mb-2 text-slate-400" />
+                Interventions are dynamic. A drop in Risk Score will automatically demote the case on the scale within 24 hours.
+              </div>
+            </div>
+          </div>
         </motion.div>
       )}
 
