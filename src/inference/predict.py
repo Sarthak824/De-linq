@@ -87,7 +87,6 @@ def score_customers(df, model):
 
     output_df = pd.concat([output_df, decisions], axis=1)
     output_df["top_reason_codes"] = output_df["top_reason_codes"].apply(lambda items: ", ".join(items))
-    output_df = generate_personas(output_df)
     output_df = detect_intents(output_df)
     
     # 2nd Layer: Exposure Analysis
@@ -97,7 +96,8 @@ def score_customers(df, model):
     # 2nd Layer: Hidden Distress Analysis
     distress_results = output_df.apply(analyze_hidden_distress, axis=1)
     output_df = pd.concat([output_df, pd.DataFrame(list(distress_results))], axis=1)
-    
+
+    output_df = generate_personas(output_df)
     output_df = apply_policy_engine(output_df)
     output_df["recommended_intervention"] = output_df.apply(
         lambda row: enrich_customer_decision(row, row["risk_score"])["recommended_intervention"],

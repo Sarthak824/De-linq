@@ -4,6 +4,25 @@ def select_policy_decision(row):
     persona_label = row.get("persona_label", "Moderate User")
     financial_stress_level = row.get("financial_stress_level", "Moderate")
 
+    if persona_label == "Stable Gig Worker":
+        return {
+            "policy_action": "flexible_payment_window",
+            "policy_priority": "medium",
+            "recommended_channel": "App",
+        }
+    if persona_label == "Volatile Gig Worker":
+        return {
+            "policy_action": "dynamic_emi_review",
+            "policy_priority": "high",
+            "recommended_channel": "WhatsApp",
+        }
+    if persona_label == "Declining Gig Worker":
+        return {
+            "policy_action": "temporary_relief_review",
+            "policy_priority": "critical",
+            "recommended_channel": "WhatsApp",
+        }
+
     if risk_band == "Low":
         return {
             "policy_action": "gentle_reminder",

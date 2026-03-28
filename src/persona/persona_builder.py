@@ -10,12 +10,23 @@ DEFAULT_OUTPUT_DIR = os.path.join(BASE_DIR, "data", "output")
 DEFAULT_OUTPUT_JSON = os.path.join(DEFAULT_OUTPUT_DIR, "personas.json")
 DEFAULT_OUTPUT_CSV = os.path.join(DEFAULT_OUTPUT_DIR, "personas.csv")
 
+PERSONA_CONFIG = {
+    "risk_thresholds": {
+        "high": 0.7,
+        "moderate": 0.4,
+    },
+    "gig_worker": {
+        "income_variability_threshold": 0.4,
+        "salary_consistency_threshold": 0.5,
+    },
+}
+
 
 def risk_level(row):
     score = row.get("risk_score", 0.5)
     if pd.isna(score): score = 0.5
-    if score >= 0.7: return "High"
-    if score >= 0.4: return "Moderate"
+    if score >= PERSONA_CONFIG["risk_thresholds"]["high"]: return "High"
+    if score >= PERSONA_CONFIG["risk_thresholds"]["moderate"]: return "Moderate"
     return "Low"
 
 def classify_spending(row):
@@ -46,6 +57,42 @@ def income_stability(row):
     if delay > 0 or loss > 0:
         return "Unstable"
     return "Stable"
+
+def derive_income_variability(row):
+    variability = row.get("income_variability")
+    if variability is not None and not pd.isna(variability):
+        return float(variability)
+
+    change = row.get("spending_change", 0)
+    if pd.isna(change):
+        change = 0
+    return abs(float(change))
+
+def derive_salary_consistency(row):
+    consistency = row.get("salary_consistency")
+    if consistency is not None and not pd.isna(consistency):
+        return float(consistency)
+
+    delay = row.get("salary_delay", 0)
+    if pd.isna(delay):
+        delay = 0
+
+    clipped_delay = min(max(float(delay), 0.0), 1.0)
+    return 1.0 - clipped_delay
+
+def is_gig_worker(row):
+    variability = row.get("income_variability", 0)
+    consistency = row.get("salary_consistency", 1)
+
+    if pd.isna(variability):
+        variability = 0
+    if pd.isna(consistency):
+        consistency = 1
+
+    return (
+        float(variability) > PERSONA_CONFIG["gig_worker"]["income_variability_threshold"]
+        and float(consistency) < PERSONA_CONFIG["gig_worker"]["salary_consistency_threshold"]
+    )
 
 def stress_level(row):
     debt = row.get("debt_stress_ratio", 0)
@@ -85,6 +132,16 @@ def extract_signals(row):
     delay = row.get("salary_delay", 0)
     if pd.isna(delay): delay = 0
     if delay > 0: signals.append("Recent salary delay")
+
+    variability = row.get("income_variability", 0)
+    if pd.isna(variability): variability = 0
+    if variability > PERSONA_CONFIG["gig_worker"]["income_variability_threshold"]:
+        signals.append("High income variability detected")
+
+    consistency = row.get("salary_consistency", 1)
+    if pd.isna(consistency): consistency = 1
+    if consistency < PERSONA_CONFIG["gig_worker"]["salary_consistency_threshold"]:
+        signals.append("Irregular salary pattern detected")
     
     exp_level = row.get("credit_exposure_level")
     if exp_level == "High":
@@ -103,10 +160,20 @@ def extract_signals(row):
 
 def assign_persona(row):
     stress = row.get("financial_stress_level", "Moderate")
-    credit = row.get("credit_dependency", "Moderate")
+    credit = row.get("credit_dependency_level", "Moderate")
     spending = row.get("spending_behavior", "Stable Spender")
     risk = row.get("risk_level", "Moderate")
-    
+
+    if is_gig_worker(row):
+        trend = row.get("spending_change", 0)
+        if pd.isna(trend):
+            trend = 0
+        if trend < -0.3:
+            return "Declining Gig Worker"
+        if trend < -0.1:
+            return "Volatile Gig Worker"
+        return "Stable Gig Worker"
+
     if row.get("hidden_distress_level") == "High":
         return "Distressed informal borrower"
     if stress == "High" and credit == "High":
@@ -128,6 +195,8 @@ def build_persona(row_series):
     row["credit_dependency_level"] = credit_dependency(row)
     row["income_stability"] = income_stability(row)
     row["financial_stress_level"] = stress_level(row)
+    row["income_variability"] = derive_income_variability(row)
+    row["salary_consistency"] = derive_salary_consistency(row)
     
     row["persona_label"] = assign_persona(row)
     row["key_signals"] = extract_signals(row)

@@ -39,6 +39,12 @@ def recommend_intervention(row, risk_score):
 
     if policy_action == "gentle_reminder" or policy_action == "payment_reminder":
         return "Send payment reminder"
+    if policy_action == "flexible_payment_window":
+        return "Offer flexible payment window"
+    if policy_action == "dynamic_emi_review":
+        return "Review dynamic EMI adjustment"
+    if policy_action == "temporary_relief_review":
+        return "Offer temporary payment relief"
     if policy_action == "grace_period_offer":
         return "Offer short grace period"
     if policy_action == "proactive_check_in":
