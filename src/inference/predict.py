@@ -163,9 +163,10 @@ def run_batch_inference(input_path=INPUT_PATH, output_path=OUTPUT_PATH, model_pa
         "policy_priority",
         "recommended_channel",
     ]
-    scored_df[output_columns].to_csv(output_path, index=False)
+    existing_columns = [col for col in output_columns if col in scored_df.columns]
+    scored_df[existing_columns].to_csv(output_path, index=False)
     save_customer_profiles(df)
-    save_customer_predictions(scored_df[output_columns])
+    save_customer_predictions(scored_df[existing_columns])
 
     print(f"✅ Batch scoring completed: {scored_df.shape}")
     print(f"📁 Saved to: {output_path}")
