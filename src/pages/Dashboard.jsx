@@ -1,0 +1,112 @@
+import { Users, AlertTriangle, TrendingUp, Activity } from "lucide-react";
+import KPICard from "../components/dashboard/KPICard";
+import FinancialStressChart from "./FinancialStressChart";
+import RiskTable from "../components/dashboard/RiskTable";
+import AIInsights from "../components/dashboard/AIInsights";
+
+// --- Mock Data ---
+const mockKPIs = {
+  totalCustomers: "124,592",
+  atRisk: "12,430",
+  recoveryRate: "68.4%",
+  avgRisk: 68, // new ML-based probability percentage
+};
+
+const mockChartData = {
+  dates: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+  stressLevels: [45, 52, 48, 65, 70, 68, 85],
+  recoveryRates: [72, 70, 71, 68, 65, 66, 62],
+};
+
+const mockRiskCustomers = [
+  { name: "Rahul Sharma", riskScore: 92, category: "High", keyDriver: "High EMI burden", lastActivity: "2 mins ago", action: "Review Credit" },
+  { name: "Priya Desai", riskScore: 85, category: "High", keyDriver: "Frequent late payments", lastActivity: "1 hour ago", action: "Initiate Restructure" },
+  { name: "Amit Kumar", riskScore: 78, category: "Medium", keyDriver: "Salary delay detected", lastActivity: "3 hours ago", action: "Send EMI Reminder" },
+  { name: "Neha Gupta", riskScore: 88, category: "High", keyDriver: "Spending spike", lastActivity: "5 hours ago", action: "Schedule Call" },
+];
+
+const mockInsights = [
+  { type: "alert", message: "Spike in EMI defaults in salaried segment observed across Tier 2 cities.", time: "1 hour ago" },
+  { type: "trend", message: "Recovery rate improved by 4.2% following the new automated SMS campaign.", time: "3 hours ago" },
+  { type: "info", message: "145 customers are eligible for the pre-approved restructuring scheme.", time: "5 hours ago" },
+  { type: "alert", message: "High variance in credit utilization for 500+ unverified accounts.", time: "6 hours ago" },
+  { type: "trend", message: "Overall risk prediction accuracy increased by 1.8% in the latest model retrain.", time: "12 hours ago" },
+];
+// -----------------
+
+export default function Dashboard() {
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500 pb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Dashboard</h1>
+          <p className="text-slate-400 mt-1">Overview of risk metrics and recent activity.</p>
+        </div>
+        <div className="flex gap-3">
+          <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-slate-700 transition-colors text-sm font-medium">
+            Export Report
+          </button>
+          <button className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-lg transition-colors text-sm font-medium shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+            Run AI Analysis
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KPICard 
+          title="Total Customers" 
+          value={mockKPIs.totalCustomers} 
+          trend={2.4} 
+          trendLabel="vs last month" 
+          icon={Users} 
+        />
+        <KPICard 
+          title="At-Risk Customers" 
+          value={mockKPIs.atRisk} 
+          trend={12.5} 
+          trendLabel="vs last month" 
+          icon={AlertTriangle} 
+          trendUpIsGood={false}
+        />
+        <KPICard 
+          title="Recovery Rate" 
+          value={mockKPIs.recoveryRate} 
+          trend={4.2} 
+          trendLabel="vs last month" 
+          icon={TrendingUp} 
+        />
+        <KPICard 
+          title="Average Risk Score" 
+          value={`${mockKPIs.avgRisk}%`} 
+          trend={1.2} 
+          trendLabel="vs last month" 
+          icon={Activity} 
+          trendUpIsGood={false}
+          valueColor="text-amber-400"
+          secondaryLabel="Medium Risk"
+          tooltip="Average predicted probability of default across all customers"
+          progressValue={mockKPIs.avgRisk}
+          progressColor="bg-amber-400"
+        />
+      </div>
+
+      {/* Analytics Main */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-3 min-h-[400px]">
+          <FinancialStressChart data={mockChartData} />
+        </div>
+      </div>
+
+      {/* Table & Insights Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <RiskTable customers={mockRiskCustomers} />
+        </div>
+        <div className="lg:col-span-1 h-full min-h-[350px]">
+          <AIInsights insights={mockInsights} />
+        </div>
+      </div>
+    </div>
+  );
+}
