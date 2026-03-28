@@ -22,8 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 
+# Kafka
+kafka_2.13-3.7.0/
+kafka_2.13-3.7.0.tgz
+
 # Python
 venv/
 __pycache__/
 *.pyc
 .env
+
+kafka_2.13-3.7.0/
+*.tgz
