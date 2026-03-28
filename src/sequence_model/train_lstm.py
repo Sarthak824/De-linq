@@ -5,7 +5,7 @@ import argparse
 
 import joblib
 import numpy as np
-from sklearn.metrics import classification_report, roc_auc_score
+from sklearn.metrics import accuracy_score, classification_report, f1_score, precision_score, recall_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
@@ -15,6 +15,7 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from src.sequence_model.generate_sequences import LSTM_WINDOWS_PATH
+from src.models.mlflow_utils import log_json_artifact, start_run
 
 ARTIFACTS_DIR = os.path.join(BASE_DIR, "artifacts")
 LSTM_MODEL_PATH = os.path.join(ARTIFACTS_DIR, "lstm_model.pt")
@@ -242,7 +243,15 @@ def evaluate_sequence_model(model, test_embeddings, y_test):
     print(classification_report(y_test, y_pred))
     print("\n🎯 Sequence ROC-AUC Score:", roc_auc_score(y_test, y_prob))
 
-    return y_prob
+    metrics = {
+        "accuracy": float(accuracy_score(y_test, y_pred)),
+        "precision": float(precision_score(y_test, y_pred, zero_division=0)),
+        "recall": float(recall_score(y_test, y_pred, zero_division=0)),
+        "f1": float(f1_score(y_test, y_pred, zero_division=0)),
+        "roc_auc": float(roc_auc_score(y_test, y_prob)),
+    }
+
+    return y_prob, y_pred, metrics
 
 
 def save_sequence_artifacts(lstm_model, scaler, xgb_model, metadata):
@@ -281,64 +290,95 @@ def run_training_pipeline(
     max_customers=None,
     max_windows=None,
 ):
-    data = load_lstm_windows()
+    with start_run("pytorch_sequence_training") as (mlflow, _):
+        data = load_lstm_windows()
 
-    X, y, customer_ids = subset_by_customer(
-        data["X"],
-        data["y"],
-        data["customer_ids"],
-        max_customers=max_customers,
-        max_windows=max_windows,
-    )
+        X, y, customer_ids = subset_by_customer(
+            data["X"],
+            data["y"],
+            data["customer_ids"],
+            max_customers=max_customers,
+            max_windows=max_windows,
+        )
 
-    X_train, X_test, y_train, y_test, train_customer_ids, test_customer_ids = split_by_customer(
-        X,
-        y,
-        customer_ids,
-        test_size=test_size,
-    )
-    validate_no_customer_overlap(train_customer_ids, test_customer_ids)
+        X_train, X_test, y_train, y_test, train_customer_ids, test_customer_ids = split_by_customer(
+            X,
+            y,
+            customer_ids,
+            test_size=test_size,
+        )
+        validate_no_customer_overlap(train_customer_ids, test_customer_ids)
 
-    X_train_scaled, X_test_scaled, scaler = fit_sequence_scaler(X_train, X_test)
+        X_train_scaled, X_test_scaled, scaler = fit_sequence_scaler(X_train, X_test)
 
-    print("Train windows:", X_train_scaled.shape)
-    print("Test windows:", X_test_scaled.shape)
-    print("Train customers:", len(np.unique(train_customer_ids)))
-    print("Test customers:", len(np.unique(test_customer_ids)))
-    summarize_split(y_train, y_test)
+        print("Train windows:", X_train_scaled.shape)
+        print("Test windows:", X_test_scaled.shape)
+        print("Train customers:", len(np.unique(train_customer_ids)))
+        print("Test customers:", len(np.unique(test_customer_ids)))
+        summarize_split(y_train, y_test)
 
-    lstm_model = train_lstm_embeddings(
-        X_train_scaled,
-        y_train,
-        input_size=X_train_scaled.shape[2],
-        epochs=epochs,
-        batch_size=batch_size,
-        hidden_size=hidden_size,
-    )
+        mlflow.log_params(
+            {
+                "seed": SEED,
+                "hidden_size": hidden_size,
+                "epochs": epochs,
+                "batch_size": batch_size,
+                "test_size": test_size,
+                "max_customers": max_customers,
+                "max_windows": max_windows,
+                "train_customer_count": int(len(np.unique(train_customer_ids))),
+                "test_customer_count": int(len(np.unique(test_customer_ids))),
+                "train_window_count": int(len(X_train_scaled)),
+                "test_window_count": int(len(X_test_scaled)),
+            }
+        )
 
-    train_embeddings = extract_embeddings(lstm_model, X_train_scaled)
-    test_embeddings = extract_embeddings(lstm_model, X_test_scaled)
+        lstm_model = train_lstm_embeddings(
+            X_train_scaled,
+            y_train,
+            input_size=X_train_scaled.shape[2],
+            epochs=epochs,
+            batch_size=batch_size,
+            hidden_size=hidden_size,
+        )
 
-    xgb_model = train_sequence_xgb(train_embeddings, y_train)
-    evaluate_sequence_model(xgb_model, test_embeddings, y_test)
+        train_embeddings = extract_embeddings(lstm_model, X_train_scaled)
+        test_embeddings = extract_embeddings(lstm_model, X_test_scaled)
 
-    metadata = {
-        "seed": SEED,
-        "hidden_size": hidden_size,
-        "epochs": epochs,
-        "batch_size": batch_size,
-        "feature_names": data["feature_names"],
-        "input_windows_path": LSTM_WINDOWS_PATH,
-        "test_size": test_size,
-        "max_customers": max_customers,
-        "max_windows": max_windows,
-        "train_customer_count": int(len(np.unique(train_customer_ids))),
-        "test_customer_count": int(len(np.unique(test_customer_ids))),
-        "train_positive_rate": float(np.mean(y_train)),
-        "test_positive_rate": float(np.mean(y_test)),
-        "leakage_check_passed": True,
-    }
-    save_sequence_artifacts(lstm_model, scaler, xgb_model, metadata)
+        xgb_model = train_sequence_xgb(train_embeddings, y_train)
+        y_prob, y_pred, metrics = evaluate_sequence_model(xgb_model, test_embeddings, y_test)
+        mlflow.log_metrics(metrics)
+
+        metadata = {
+            "seed": SEED,
+            "hidden_size": hidden_size,
+            "epochs": epochs,
+            "batch_size": batch_size,
+            "feature_names": data["feature_names"],
+            "input_windows_path": LSTM_WINDOWS_PATH,
+            "test_size": test_size,
+            "max_customers": max_customers,
+            "max_windows": max_windows,
+            "train_customer_count": int(len(np.unique(train_customer_ids))),
+            "test_customer_count": int(len(np.unique(test_customer_ids))),
+            "train_positive_rate": float(np.mean(y_train)),
+            "test_positive_rate": float(np.mean(y_test)),
+            "leakage_check_passed": True,
+        }
+        save_sequence_artifacts(lstm_model, scaler, xgb_model, metadata)
+        mlflow.log_artifact(LSTM_MODEL_PATH)
+        mlflow.log_artifact(LSTM_SCALER_PATH)
+        mlflow.log_artifact(SEQUENCE_XGB_PATH)
+        mlflow.log_artifact(LSTM_METADATA_PATH)
+        log_json_artifact(
+            mlflow,
+            {
+                "classification_report": classification_report(y_test, y_pred, output_dict=True),
+                "sequence_metrics": metrics,
+                "metadata": metadata,
+            },
+            "sequence_training_report.json",
+        )
 
     return {
         "lstm_model_path": LSTM_MODEL_PATH,

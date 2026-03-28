@@ -1,32 +1,49 @@
-from kafka import KafkaProducer
-import pandas as pd
 import json
-import time
+import logging
 import random
+import time
+
+import pandas as pd
+from kafka import KafkaProducer
+
+KAFKA_BROKER = "localhost:9092"
+OUTPUT_TOPIC = "customer_events"
+INPUT_PATH = "data/processed/final_cleaned.csv"
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-df = pd.read_csv("data/processed/final_cleaned.csv")
+def build_producer():
+    return KafkaProducer(
+        bootstrap_servers=KAFKA_BROKER,
+        value_serializer=lambda value: json.dumps(value).encode("utf-8"),
+    )
 
-producer = KafkaProducer(
-    bootstrap_servers='localhost:9092',
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
 
-print("Streaming lightweight real-time customer payloads started (Feast Mode)...")
+def stream_customer_events():
+    df = pd.read_csv(INPUT_PATH)
+    producer = build_producer()
 
-# Keep the dataframe to simulate reality by iterating over known IDs
-df = pd.read_csv("data/processed/final_cleaned.csv")
+    logger.info("Streaming lightweight real-time customer payloads for Feast-backed scoring")
 
-for i, row in df.iterrows():
-    # Only sent the primary key and an event payload!
-    record = {
-        "customer_id": row["customer_id"],
-        "event_time": pd.Timestamp.now().isoformat(),
-        "event_type": "balance_check",
-    }
+    try:
+        for index, row in df.iterrows():
+            record = {
+                "customer_id": row["customer_id"],
+                "event_time": pd.Timestamp.now().isoformat(),
+                "event_type": "balance_check",
+            }
+            producer.send(OUTPUT_TOPIC, record)
 
-    producer.send('customer_events', record)
+            if index % 10 == 0:
+                logger.info("Sent record %s for customer %s", index, row["customer_id"])
+                time.sleep(random.uniform(0.1, 0.3))
 
-    if i % 10 == 0:
-        print(f"Sent record {i}")
-        time.sleep(random.uniform(0.1, 0.3))
+        producer.flush()
+    finally:
+        producer.close()
+
+
+if __name__ == "__main__":
+    stream_customer_events()

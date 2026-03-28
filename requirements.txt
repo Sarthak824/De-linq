@@ -1,10 +1,13 @@
 boto3
 botocore
+bentoml
 Faker
 fastapi
 httpx
 jmespath
 joblib
+lightgbm
+mlflow
 numpy<2.0.0
 pandas<3.0
 pydantic
@@ -14,6 +17,7 @@ s3transfer
 scikit-learn
 scipy
 six
+tensorflow
 threadpoolctl
 torch
 urllib3

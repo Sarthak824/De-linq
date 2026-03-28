@@ -41,7 +41,11 @@ def main():
             if risk_prediction == 1:
                 logger.info(f"[INTERVENTION] Customer {customer_id} is {risk_band}. Triggering intervention...")
                 execution = trigger_intervention(assessment)
-                logger.info(f"  -> Triggered {execution.recommended_intervention} via {execution.recommended_channel}")
+                logger.info(
+                    "  -> Triggered %s via %s",
+                    execution["recommended_intervention"],
+                    execution["recommended_channel"],
+                )
             else:
                 logger.debug(f"Customer {customer_id} is low risk. Skipping.")
 

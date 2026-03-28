@@ -25,12 +25,29 @@ dist-ssr
 # Kafka
 kafka_2.13-3.7.0/
 kafka_2.13-3.7.0.tgz
+*.tgz
 
 # Python
 venv/
+venv-tf/
 __pycache__/
 *.pyc
+.pytest_cache/
+.mypy_cache/
 .env
 
-kafka_2.13-3.7.0/
-*.tgz
+# Build outputs
+build/
+dist/
+
+# Generated ML artifacts and datasets
+artifacts/
+artifacts/metrics/
+data/raw/
+data/processed/
+data/output/
+data/sequences/
+data/db/
+
+# Feast local state
+feature_repo/data/*.db

@@ -1,22 +1,27 @@
+import os
 from datetime import timedelta
-from feast import Entity, FeatureView, FileSource, Field
-from feast.types import Float32, Int32, String
 
-# Connect to our Parquet data source
+from feast import Entity, FeatureView, FileSource, Field
+from feast.types import Float32, Int32
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+PARQUET_SOURCE_PATH = os.path.join(BASE_DIR, "data", "processed", "final_cleaned.parquet")
+
+# Connect to the repo-local Parquet data source.
 customer_source = FileSource(
     name="customer_stats_source",
-    path="/Users/Hp/Documents/De-linq/data/processed/final_cleaned.parquet",
+    path=PARQUET_SOURCE_PATH,
     timestamp_field="event_timestamp",
 )
 
-# Define the entity (Primary Key)
+# Define the entity (Primary Key).
 customer = Entity(name="customer", join_keys=["customer_id"])
 
-# Define the Feature View that pulls all fields needed by XGBoost
+# Define the feature view used for online scoring.
 customer_stats_fv = FeatureView(
     name="customer_financial_profile",
     entities=[customer],
-    ttl=timedelta(days=3650), # How far back to look for data
+    ttl=timedelta(days=3650),
     schema=[
         Field(name="age", dtype=Int32),
         Field(name="monthly_income", dtype=Float32),

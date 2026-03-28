@@ -1,20 +1,12 @@
 import os
 import sys
+import json
+import logging
 
 # Ensure paths correctly resolve
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
-
-# VERY IMPORTANT: Load xgboost/torch BEFORE feast/pandas/pyarrow to prevent macOS segfault 11
-from src.inference.predict import load_model, score_records
-from src.api.app import CustomerFeatures
-
-import json
-import logging
-from kafka import KafkaConsumer, KafkaProducer
-import pandas as pd
-from feast import FeatureStore
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -40,14 +32,40 @@ FEAST_FEATURES = [
     "customer_financial_profile:stability_score"
 ]
 
+
+def _flatten_feature_vector(feature_vector):
+    customer_features = {}
+    for key, values in feature_vector.items():
+        if not values:
+            continue
+
+        key_name = key.split(":")[-1]
+        value = values[0]
+
+        if value is None:
+            raise ValueError(f"Missing online feature value for {key}")
+
+        customer_features[key_name] = value
+
+    return customer_features
+
+
 def main():
     logger.info("Loading ML Model...")
+    # Keep import order local and explicit. On macOS, importing Feast/pyarrow
+    # before loading the XGBoost model can trigger a native-library segfault.
+    from src.inference.predict import load_model, score_records
+
     model = load_model()
 
     logger.info("Initializing Feast Feature Store...")
+    from feast import FeatureStore
+
     store = FeatureStore(repo_path=os.path.join(BASE_DIR, "feature_repo"))
 
     logger.info(f"Connecting to Kafka at {KAFKA_BROKER}...")
+    from kafka import KafkaConsumer, KafkaProducer
+
     consumer = KafkaConsumer(
         INPUT_TOPIC,
         bootstrap_servers=KAFKA_BROKER,
@@ -64,41 +82,43 @@ def main():
 
     logger.info(f"Listening on topic: {INPUT_TOPIC}")
 
-    for message in consumer:
-        try:
-            payload = message.value
-            customer_id = payload.get("customer_id")
-            
-            if not customer_id:
-                logger.warning("Received event without customer_id. Skipping.")
-                continue
-                
-            logger.info(f"Received customer event for {customer_id}. Fetching features from Feast...")
+    try:
+        for message in consumer:
+            try:
+                payload = message.value
+                customer_id = payload.get("customer_id")
 
-            # 1. Fetch real-time feature dictionary from Feast Online Store (SQLite)
-            feature_vector = store.get_online_features(
-                features=FEAST_FEATURES,
-                entity_rows=[{"customer_id": customer_id}]
-            ).to_dict()
-            
-            # 2. Reconstruct payload matching exactly what the model expects
-            customer_features_dict = {}
-            for k, v in feature_vector.items():
-                key_name = k.split('__')[-1] if '__' in k else k
-                customer_features_dict[key_name] = v[0]
-                
-            customer_features_dict["customer_id"] = customer_id
+                if not customer_id:
+                    logger.warning("Received event without customer_id. Skipping.")
+                    continue
 
-            # 3. Predict
-            predictions = score_records([customer_features_dict], model)
-            result = predictions[0]
+                logger.info("Received customer event for %s. Fetching features from Feast...", customer_id)
 
-            # 4. Route to output topic for orchestrator
-            producer.send(OUTPUT_TOPIC, value=result)
-            logger.info(f"➜ Scored customer {customer_id}: Risk={result['risk_score']} - Action required!")
+                feature_vector = store.get_online_features(
+                    features=FEAST_FEATURES,
+                    entity_rows=[{"customer_id": customer_id}]
+                ).to_dict()
 
-        except Exception as e:
-            logger.error(f"Error processing record: {e}")
+                customer_features_dict = _flatten_feature_vector(feature_vector)
+                customer_features_dict["customer_id"] = customer_id
+
+                predictions = score_records([customer_features_dict], model)
+                result = predictions[0]
+
+                producer.send(OUTPUT_TOPIC, value=result)
+                producer.flush()
+                logger.info(
+                    "Scored customer %s with risk_score=%s and risk_band=%s",
+                    customer_id,
+                    result["risk_score"],
+                    result["risk_band"],
+                )
+
+            except Exception as exc:
+                logger.error("Error processing record: %s", exc)
+    finally:
+        producer.close()
+        consumer.close()
 
 if __name__ == "__main__":
     main()
