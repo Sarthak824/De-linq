@@ -5,7 +5,6 @@ import FinancialStressChart from "./FinancialStressChart";
 import RiskTable from "../components/dashboard/RiskTable";
 import AIInsights from "../components/dashboard/AIInsights";
 import Toast from "../components/common/Toast";
-import PlotlyChart from "../components/analytics/PlotlyChart";
 import { motion, AnimatePresence } from "framer-motion";
 
 // --- Mock Data ---
@@ -52,19 +51,19 @@ export default function Dashboard() {
           fetch('http://127.0.0.1:8000/analytics/top-risks?limit=6'),
           fetch('http://127.0.0.1:8000/analytics/insights')
         ]);
-        
+
         const statsData = await statsRes.json();
         const risksData = await risksRes.json();
         const insightsData = await insightsRes.json();
-        
+
         setStats({
           totalCustomers: (statsData.total_customers || 0).toLocaleString(),
           atRisk: (statsData.at_risk_customers || 0).toLocaleString(),
           avgRisk: Math.round((statsData.average_risk_score || 0) * 100)
         });
-        
+
         setInsights(insightsData);
-        
+
         setTopRisks(risksData.customers.map(c => {
           let drivers = c.top_reason_codes || "Multi-factor risk";
           if (typeof drivers === 'string') drivers = drivers.split(',')[0];
@@ -109,7 +108,7 @@ export default function Dashboard() {
           <button className="px-5 py-2.5 bg-slate-800/80 hover:bg-slate-700 text-white rounded-xl border border-white/5 transition-all text-sm font-bold tracking-tight shadow-xl flex items-center gap-2">
             Export Report
           </button>
-          <button 
+          <button
             onClick={() => {
               setIsAnalyzing(true);
               setTimeout(() => {
@@ -118,11 +117,10 @@ export default function Dashboard() {
               }, 2500);
             }}
             disabled={isAnalyzing}
-            className={`px-5 py-2.5 rounded-xl transition-all text-sm font-bold tracking-tight shadow-[0_0_20px_rgba(6,182,212,0.2)] flex items-center gap-2 ${
-              isAnalyzing 
-                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5' 
+            className={`px-5 py-2.5 rounded-xl transition-all text-sm font-bold tracking-tight shadow-[0_0_20px_rgba(6,182,212,0.2)] flex items-center gap-2 ${isAnalyzing
+                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5'
                 : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 active:scale-95'
-            }`}
+              }`}
           >
             {isAnalyzing ? (
               <>
@@ -145,37 +143,37 @@ export default function Dashboard() {
 
       <AnimatePresence>
         {toast && (
-          <Toast 
-            message={toast.message} 
-            type={toast.type} 
-            onClose={() => setToast(null)} 
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
           />
         )}
       </AnimatePresence>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <KPICard 
-          title="Total Customers" 
-          value={stats.totalCustomers} 
-          trend={2.4} 
-          trendLabel="vs last month" 
-          icon={Users} 
+        <KPICard
+          title="Total Customers"
+          value={stats.totalCustomers}
+          trend={2.4}
+          trendLabel="vs last month"
+          icon={Users}
         />
-        <KPICard 
-          title="At-Risk Customers" 
-          value={stats.atRisk} 
-          trend={12.5} 
-          trendLabel="vs last month" 
-          icon={AlertTriangle} 
+        <KPICard
+          title="At-Risk Customers"
+          value={stats.atRisk}
+          trend={12.5}
+          trendLabel="vs last month"
+          icon={AlertTriangle}
           trendUpIsGood={false}
         />
-        <KPICard 
-          title="Average Risk Score" 
-          value={`${stats.avgRisk}%`} 
-          trend={1.2} 
-          trendLabel="vs last month" 
-          icon={Activity} 
+        <KPICard
+          title="Average Risk Score"
+          value={`${stats.avgRisk}%`}
+          trend={1.2}
+          trendLabel="vs last month"
+          icon={Activity}
           trendUpIsGood={false}
           valueColor="text-amber-400"
           secondaryLabel="Medium Risk"
@@ -185,14 +183,9 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Analytics Main */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <FinancialStressChart data={mockChartData} />
-        </div>
-        <div className="lg:col-span-2">
-          <PlotlyChart />
-        </div>
+      {/* Analytics Chart */}
+      <div className="w-full">
+        <FinancialStressChart data={mockChartData} />
       </div>
 
       {/* Table & Insights Row */}
