@@ -209,6 +209,13 @@ def assign_persona(row):
             return "Declining Gig Worker"
         if crs_band == "Moderate":
             return "Volatile Gig Worker"
+        trend = row.get("spending_change", 0)
+        if pd.isna(trend):
+            trend = 0
+        if float(trend) < -0.3:
+            return "Declining Gig Worker"
+        if float(trend) < -0.1:
+            return "Volatile Gig Worker"
         return "Stable Gig Worker"
 
     if row.get("hidden_distress_level") == "High":

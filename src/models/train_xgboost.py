@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 
 import joblib
 from xgboost import XGBClassifier
@@ -19,6 +20,44 @@ from src.models.training_utils import (
 print("XGBoost loaded")
 
 MODEL_PATH = os.path.join(BASE_DIR, "artifacts/xgb_model.pkl")
+BEST_PARAMS_PATH = os.path.join(BASE_DIR, "artifacts", "xgb_best_params.json")
+
+DEFAULT_XGB_PARAMS = {
+    "n_estimators": 250,
+    "max_depth": 4,
+    "learning_rate": 0.05,
+    "subsample": 0.85,
+    "colsample_bytree": 0.85,
+    "min_child_weight": 3,
+    "reg_alpha": 0.2,
+    "reg_lambda": 1.2,
+    "gamma": 0.0,
+}
+
+
+def load_best_params(best_params_path=BEST_PARAMS_PATH):
+    if not os.path.exists(best_params_path):
+        return DEFAULT_XGB_PARAMS.copy()
+
+    with open(best_params_path) as input_file:
+        params = json.load(input_file)
+
+    merged = DEFAULT_XGB_PARAMS.copy()
+    merged.update(params)
+    return merged
+
+
+def build_model(scale_pos_weight, params=None):
+    resolved_params = DEFAULT_XGB_PARAMS.copy()
+    if params:
+        resolved_params.update(params)
+
+    return XGBClassifier(
+        **resolved_params,
+        random_state=42,
+        scale_pos_weight=scale_pos_weight,
+        eval_metric="logloss",
+    )
 
 def run_training():
     _, X, y = load_training_frame()
@@ -30,20 +69,10 @@ def run_training():
     print("Test label distribution:\n", y_test.value_counts())
 
     scale_pos_weight = y_train.value_counts()[0] / y_train.value_counts()[1]
+    best_params = load_best_params()
+    print("Training params:", best_params)
 
-    model = XGBClassifier(
-        n_estimators=250,
-        max_depth=4,
-        learning_rate=0.05,
-        subsample=0.85,
-        colsample_bytree=0.85,
-        min_child_weight=3,
-        reg_alpha=0.2,
-        reg_lambda=1.2,
-        random_state=42,
-        scale_pos_weight=scale_pos_weight,
-        eval_metric="logloss",
-    )
+    model = build_model(scale_pos_weight=scale_pos_weight, params=best_params)
 
     model.fit(X_train, y_train)
 

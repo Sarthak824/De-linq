@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Plotly from 'plotly.js-dist-min';
+import { buildApiUrl } from '../../lib/api';
 
 export default function CRSPlotlyChart() {
   const chartRef = useRef(null);
@@ -8,7 +9,7 @@ export default function CRSPlotlyChart() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/customers?limit=1000');
+        const res = await fetch(buildApiUrl('/customers?limit=1000'));
         const json = await res.json();
         const customers = json.customers;
 

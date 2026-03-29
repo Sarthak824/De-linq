@@ -57,7 +57,11 @@ class RiskScoringService:
 
     @bentoml.api
     def health(self) -> dict:
-        return {"status": "ok", "model": "xgboost"}
+        return {
+            "status": "ok",
+            "model": "combined_risk",
+            "components": ["xgboost", "sequence_model"],
+        }
 
     @bentoml.api
     def predict(self, customer: CustomerFeatures) -> dict:
