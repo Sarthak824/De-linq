@@ -6,6 +6,7 @@ import RiskTable from "../components/dashboard/RiskTable";
 import AIInsights from "../components/dashboard/AIInsights";
 import Toast from "../components/common/Toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { buildApiUrl } from "../lib/api";
 
 // --- Mock Data ---
 const mockKPIs = {
@@ -47,9 +48,9 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         const [statsRes, risksRes, insightsRes] = await Promise.all([
-          fetch('http://127.0.0.1:8000/portfolio-summary'),
-          fetch('http://127.0.0.1:8000/analytics/top-risks?limit=6'),
-          fetch('http://127.0.0.1:8000/analytics/insights')
+          fetch(buildApiUrl('/portfolio-summary')),
+          fetch(buildApiUrl('/analytics/top-risks?limit=6')),
+          fetch(buildApiUrl('/analytics/insights'))
         ]);
 
         const statsData = await statsRes.json();

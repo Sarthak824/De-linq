@@ -11,6 +11,7 @@ import {
   BarChart3,
   Waves
 } from 'lucide-react';
+import { buildApiUrl } from '../lib/api';
 
 const IntelligenceCard = ({ title, subtitle, icon: Icon, color, children }) => (
   <div className="bg-[#131b2e]/60 backdrop-blur-xl border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-all group h-full">
@@ -49,7 +50,7 @@ export default function RiskIntelligence() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/portfolio-summary');
+        const res = await fetch(buildApiUrl('/portfolio-summary'));
         const json = await res.json();
         setData(json);
       } catch (err) {

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, AlertTriangle, CheckCircle, Info, Activity, ShieldAlert, Zap, DollarSign, Wallet, CreditCard, Crosshair, Users } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 import { motion } from "framer-motion";
+import { buildApiUrl } from "../lib/api";
 
 export default function CustomerDetail() {
   const { id } = useParams();
@@ -14,7 +15,7 @@ export default function CustomerDetail() {
   useEffect(() => {
     const loadCustomer = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/customers/${id}`);
+        const response = await fetch(buildApiUrl(`/customers/${id}`));
         if (!response.ok) throw new Error("Not found");
         const json = await response.json();
         

@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldAlert, Info, TrendingUp, AlertTriangle, Search, Filter, Download, UserMinus, ArrowUpDown, Loader2 } from 'lucide-react';
+import { buildApiUrl } from '../lib/api';
 
 const ProgressBar = ({ value, type }) => {
   // Normalize value to 0-100 scale if it's currently 0-1
@@ -61,7 +62,7 @@ export default function Customers() {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/customers?limit=1000');
+        const response = await fetch(buildApiUrl('/customers?limit=1000'));
         const data = await response.json();
         // Backend returns { customers: [...] }
         setCustomers(data.customers || []);
@@ -373,4 +374,3 @@ export default function Customers() {
     </div>
   );
 }
-

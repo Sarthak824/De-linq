@@ -3,6 +3,7 @@ import { Search, Bell, User, X, ArrowUpRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { buildApiUrl } from "../../lib/api";
 
 export default function Topbar() {
   const [query, setQuery] = useState("");
@@ -34,7 +35,7 @@ export default function Topbar() {
     setIsOpen(true);
     try {
       // Fetching all customers for local filtering to keep it super fast after first load
-      const res = await fetch("http://localhost:8000/customers");
+      const res = await fetch(buildApiUrl("/customers"));
       const dataObj = await res.json();
       const customersList = Array.isArray(dataObj.customers) ? dataObj.customers : (Array.isArray(dataObj) ? dataObj : []);
       const filtered = customersList
