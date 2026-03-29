@@ -59,9 +59,10 @@ def income_stability(row):
     return "Stable"
 
 def derive_income_variability(row):
-    variability = row.get("income_variability")
-    if variability is not None and not pd.isna(variability):
-        return float(variability)
+    income_std = row.get("income_std")
+    monthly_income = row.get("monthly_income")
+    if income_std is not None and monthly_income is not None and monthly_income > 0:
+        return float(income_std) / float(monthly_income)
 
     change = row.get("spending_change", 0)
     if pd.isna(change):
@@ -69,9 +70,9 @@ def derive_income_variability(row):
     return abs(float(change))
 
 def derive_salary_consistency(row):
-    consistency = row.get("salary_consistency")
-    if consistency is not None and not pd.isna(consistency):
-        return float(consistency)
+    active_days = row.get("active_earning_days")
+    if active_days is not None and not pd.isna(active_days):
+        return float(active_days) / 30.0
 
     delay = row.get("salary_delay", 0)
     if pd.isna(delay):
@@ -89,9 +90,14 @@ def is_gig_worker(row):
     if pd.isna(consistency):
         consistency = 1
 
+    income_sources = row.get("income_sources", 1)
+    if pd.isna(income_sources): income_sources = 1
+
+    # Identify as gig worker if they have multiple sources OR high variability/low consistency
     return (
-        float(variability) > PERSONA_CONFIG["gig_worker"]["income_variability_threshold"]
-        and float(consistency) < PERSONA_CONFIG["gig_worker"]["salary_consistency_threshold"]
+        int(income_sources) > 1
+        or (float(variability) > PERSONA_CONFIG["gig_worker"]["income_variability_threshold"]
+            and float(consistency) < PERSONA_CONFIG["gig_worker"]["salary_consistency_threshold"])
     )
 
 def stress_level(row):
@@ -143,6 +149,13 @@ def extract_signals(row):
     if consistency < PERSONA_CONFIG["gig_worker"]["salary_consistency_threshold"]:
         signals.append("Irregular salary pattern detected")
     
+    crs_score = row.get("crs_score")
+    if crs_score is not None and not pd.isna(crs_score):
+        if crs_score < 0.5:
+            signals.append(f"Low cash flow reliability (CRS: {crs_score})")
+        elif crs_score < 0.75:
+            signals.append(f"Borderline cash flow reliability (CRS: {crs_score})")
+
     exp_level = row.get("credit_exposure_level")
     if exp_level == "High":
         signals.append("High overall credit exposure")
@@ -191,12 +204,10 @@ def assign_persona(row):
         return "Potentially Distressed User"
 
     if is_gig_worker(row):
-        trend = row.get("spending_change", 0)
-        if pd.isna(trend):
-            trend = 0
-        if trend < -0.3:
+        crs_band = row.get("crs_band")
+        if crs_band == "Risky":
             return "Declining Gig Worker"
-        if trend < -0.1:
+        if crs_band == "Moderate":
             return "Volatile Gig Worker"
         return "Stable Gig Worker"
 

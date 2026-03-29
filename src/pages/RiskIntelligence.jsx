@@ -12,6 +12,7 @@ import {
   Waves
 } from 'lucide-react';
 import { buildApiUrl } from '../lib/api';
+import CRSPlotlyChart from '../components/analytics/CRSPlotlyChart';
 
 const IntelligenceCard = ({ title, subtitle, icon: Icon, color, children }) => (
   <div className="bg-[#131b2e]/60 backdrop-blur-xl border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-all group h-full">
@@ -78,12 +79,12 @@ export default function RiskIntelligence() {
         </h1>
         <p className="text-slate-400 text-lg max-w-2xl">
           Deep-dive behavioral analytics across 8,000 intelligence records. 
-          Real-time signals captured from 5 distinct fragility engines.
+          Real-time signals captured from 6 distinct fragility engines.
         </p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* 1. Coping & Hidden Distress */}
+        {/* Row 1 */}
         <IntelligenceCard 
           title="Hidden Distress Engine" 
           subtitle="Sub-radar stress signals"
@@ -96,13 +97,12 @@ export default function RiskIntelligence() {
             <ProgressBar label="Patchwork Recovery" value={78} color="amber" />
             <div className="pt-4 border-t border-white/5">
               <p className="text-xs text-slate-500 leading-relaxed italic">
-                "Detecting informal borrowing via non-standard P2P inflows prior to EMI due dates."
+                "Detecting informal borrowing via non-standard P2P inflows."
               </p>
             </div>
           </div>
         </IntelligenceCard>
 
-        {/* 2. Credit Exposure */}
         <IntelligenceCard 
           title="Exposure Analyzer" 
           subtitle="Portfolio debt fragility"
@@ -110,18 +110,17 @@ export default function RiskIntelligence() {
           color="indigo"
         >
           <div className="space-y-5">
-            <ProgressBar label="Unsecured-Heavy Concentration" value={58} color="indigo" />
+            <ProgressBar label="Unsecured Concentration" value={58} color="indigo" />
             <ProgressBar label="Multi-Lender Overlap" value={35} color="indigo" />
             <ProgressBar label="Leverage Vulnerability" value={82} color="indigo" />
             <div className="pt-4 border-t border-white/5">
               <p className="text-xs text-slate-500 leading-relaxed italic">
-                "Identifying 'Leverage Traps' where minor shocks lead to immediate structural default."
+                "Identifying 'Leverage Traps' where minor shocks lead to default."
               </p>
             </div>
           </div>
         </IntelligenceCard>
 
-        {/* 3. Asset Utilization */}
         <IntelligenceCard 
           title="Liquidity Stress" 
           subtitle="Emergency cash generation"
@@ -134,13 +133,29 @@ export default function RiskIntelligence() {
             <ProgressBar label="Overdraft Utilization Max" value={88} color="teal" />
             <div className="pt-4 border-t border-white/5">
               <p className="text-xs text-slate-500 leading-relaxed italic">
-                "Tracking asset depletion rates as a leading indicator of 'Asset-Rich' stress."
+                "Tracking asset depletion rates as a leading indicator of stress."
               </p>
             </div>
           </div>
         </IntelligenceCard>
 
-        {/* 4. Persona Distribution */}
+        {/* Row 2 */}
+        <IntelligenceCard 
+          title="Cash Flow Reliability (CRS)" 
+          subtitle="Gig-Economy Stability Matrix"
+          icon={Zap}
+          color="cyan"
+        >
+          <div className="h-[200px] -mt-4">
+            <CRSPlotlyChart />
+          </div>
+          <div className="pt-2 border-t border-white/5">
+            <p className="text-[10px] text-slate-500 leading-tight">
+              Mapping <span className="text-teal-400 font-bold">Reliability</span> vs <span className="text-rose-400 font-bold">Risk</span>. Bottom-right quadrant identifies "Hidden Gems".
+            </p>
+          </div>
+        </IntelligenceCard>
+
         <IntelligenceCard 
           title="Risk Archetypes" 
           subtitle="Persona distribution"
@@ -149,21 +164,20 @@ export default function RiskIntelligence() {
         >
           <div className="space-y-4">
             <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
-              <span className="text-sm font-semibold text-rose-400">Fragile Debt-Heavy</span>
-              <span className="text-xs text-slate-400">22%</span>
+              <span className="text-sm font-semibold text-teal-400">Stable Gig Worker</span>
+              <span className="text-xs text-slate-400">14%</span>
             </div>
-            <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
-              <span className="text-sm font-semibold text-amber-400">Hidden Distress Coper</span>
-              <span className="text-xs text-slate-400">18%</span>
+            <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-blue-500/20">
+              <span className="text-sm font-semibold text-blue-400">Volatile Gig Worker</span>
+              <span className="text-xs text-slate-400">31%</span>
             </div>
-            <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
-              <span className="text-sm font-semibold text-cyan-400">Asset-Rich Stressed</span>
-              <span className="text-xs text-slate-400">12%</span>
+            <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-rose-500/20">
+              <span className="text-sm font-semibold text-rose-400">Declining Gig Worker</span>
+              <span className="text-xs text-slate-400">8%</span>
             </div>
           </div>
         </IntelligenceCard>
 
-        {/* 5. Severity Drivers */}
         <IntelligenceCard 
           title="Severity Triggers" 
           subtitle="Top risk drivers (%)"
@@ -172,15 +186,15 @@ export default function RiskIntelligence() {
         >
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              {['Salary Delay', 'Informal P2P', 'OD Usage', 'FD Break', 'Multiple CCs'].map(tag => (
-                <span key={tag} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold text-slate-300 uppercase letter-tracking-widest">
+              {['Salary Delay', 'Informal P2P', 'OD Usage', 'Cash-Flow Reliability', 'FD Break'].map(tag => (
+                <span key={tag} className={`px-2 py-0.5 bg-white/5 border border-white/10 rounded-full text-[9px] font-bold ${tag === 'Cash-Flow Reliability' ? 'text-cyan-400 border-cyan-500/30' : 'text-slate-400'} uppercase`}>
                   {tag}
                 </span>
               ))}
             </div>
-            <div className="h-[120px] flex items-end gap-2 px-2">
-              {[60, 85, 45, 70, 55, 90, 40].map((h, i) => (
-                <div key={i} className="flex-1 bg-rose-500/40 rounded-t-sm hover:bg-rose-500 transition-colors" style={{ height: `${h}%` }} />
+            <div className="h-[100px] flex items-end gap-2 px-2">
+              {[60, 85, 45, 95, 55, 90, 40].map((h, i) => (
+                <div key={i} className={`flex-1 ${i === 3 ? 'bg-cyan-500' : 'bg-rose-500/40'} rounded-t-sm transition-colors`} style={{ height: `${h}%` }} />
               ))}
             </div>
           </div>

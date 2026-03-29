@@ -19,6 +19,7 @@ from src.intelligence.black_swan_engine import batch_analyze_black_swan
 from src.intelligence.exposure_analyzer import analyze_exposure, batch_analyze_exposure
 from src.intelligence.hidden_distress_engine import analyze_hidden_distress, batch_analyze_hidden_distress
 from src.intelligence.liquidity_engine import analyze_liquidity_stress, batch_analyze_liquidity_stress
+from src.intelligence.cash_flow_reliability import batch_compute_crs
 from src.storage.database import save_customer_predictions, save_customer_profiles
 
 MODEL_PATH = os.path.join(BASE_DIR, "artifacts", "xgb_model.pkl")
@@ -124,6 +125,9 @@ def score_customers(df, model):
     output_df = batch_analyze_black_swan(output_df)
     output_df["risk_score"] = output_df["risk_score_after_shock"]
 
+    # 3rd Layer: Post-inference enrichment (CRS)
+    output_df = batch_compute_crs(output_df)
+
     # Intent detection depends on the derived intelligence layers.
     output_df = detect_intents(output_df)
 
@@ -184,6 +188,8 @@ def format_prediction_row(row):
         "asset_depletion_strategy": row.get("asset_depletion_strategy"),
         "depletion_index": float(row["depletion_index"]) if pd.notna(row.get("depletion_index")) else 0.0,
         "od_usage_pct": float(row["od_usage_pct"]) if pd.notna(row.get("od_usage_pct")) else 0.0,
+        "crs_score": float(row["crs_score"]) if pd.notna(row.get("crs_score")) else 0.0,
+        "crs_band": row.get("crs_band"),
     }
 
 
@@ -253,6 +259,8 @@ def run_batch_inference(input_path=INPUT_PATH, output_path=OUTPUT_PATH, model_pa
         "asset_depletion_strategy",
         "depletion_index",
         "od_usage_pct",
+        "crs_score",
+        "crs_band",
     ]
     existing_columns = [col for col in output_columns if col in scored_df.columns]
     scored_df[existing_columns].to_csv(output_path, index=False)

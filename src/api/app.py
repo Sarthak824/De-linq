@@ -109,6 +109,8 @@ class PredictionResponse(BaseModel):
     asset_depletion_strategy: Optional[str] = None
     depletion_index: Optional[float] = 0.0
     od_usage_pct: Optional[float] = 0.0
+    crs_score: Optional[float] = 0.0
+    crs_band: Optional[str] = None
 
 
 class BatchPredictionRequest(BaseModel):
@@ -179,6 +181,8 @@ class CustomerListItem(BaseModel):
     persona_label: Optional[str] = None
     intent_label: Optional[str] = None
     recommended_intervention: Optional[str] = None
+    crs_score: Optional[float] = None
+    crs_band: Optional[str] = None
 
 
 class CustomerListResponse(BaseModel):
@@ -305,6 +309,8 @@ def _split_customer_payload(record: dict):
         "asset_depletion_strategy",
         "depletion_index",
         "od_usage_pct",
+        "crs_score",
+        "crs_band",
     }
 
     profile = {}
@@ -604,6 +610,15 @@ def get_dynamic_insights():
             insights.append({
                 "type": "info",
                 "message": f"Exposure Alert: {high_exp} customers show debt-to-income misalignment (Exposure > 60%). Recommend debt consolidation.",
+                "time": "Updated now"
+            })
+            
+        # Insight 5: CRS Reliability Insight
+        if "crs_band" in predictions_df.columns:
+            risky_crs = int((predictions_df["crs_band"] == "Risky").sum())
+            insights.append({
+                "type": "alert",
+                "message": f"Gig Economy: {risky_crs} gig workers show 'Risky' cash-flow reliability; consider dynamic EMI restructuring.",
                 "time": "Updated now"
             })
 

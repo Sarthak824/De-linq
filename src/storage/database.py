@@ -93,6 +93,8 @@ PREDICTION_COLUMNS = [
     "asset_depletion_strategy",
     "depletion_index",
     "od_usage_pct",
+    "crs_score",
+    "crs_band",
 ]
 
 INTERVENTION_COLUMNS = [
@@ -216,6 +218,8 @@ def init_database(db_path=None):
                 asset_depletion_strategy TEXT,
                 depletion_index REAL,
                 od_usage_pct REAL,
+                crs_score REAL,
+                crs_band TEXT,
                 updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
             """
@@ -260,6 +264,8 @@ def _ensure_prediction_columns(connection):
         "shock_severity": "TEXT",
         "shock_signals": "TEXT",
         "shock_intervention_hint": "TEXT",
+        "crs_score": "REAL",
+        "crs_band": "TEXT",
     }
     for column_name, column_type in required_columns.items():
         if column_name not in existing_columns:
@@ -322,7 +328,8 @@ def load_customer_predictions(db_path=None):
             "SELECT customer_id, risk_score, xgb_risk_score, sequence_risk_score, score_source, risk_prediction, risk_band, "
             "top_reason_codes, recommended_intervention, persona_label, persona_signals, "
             "financial_stress_level, intent_label, policy_action, policy_priority, recommended_channel, "
-            "shock_flag, shock_score, shock_severity, shock_signals, shock_intervention_hint "
+            "shock_flag, shock_score, shock_severity, shock_signals, shock_intervention_hint, "
+            "crs_score, crs_band "
             "FROM customer_predictions",
             connection,
         )

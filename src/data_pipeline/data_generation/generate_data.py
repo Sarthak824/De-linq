@@ -48,13 +48,22 @@ def generate_customer(i):
         spending_change = clipped_normal(0.04, 0.10, -0.20, 0.25)
         avg_balance_ratio = clipped_normal(2.1, 0.6, 0.9, 4.0)
         card_due_ratio = clipped_normal(0.14, 0.06, 0.03, 0.30)
-        
+
         # Loan structure
         secured_loans = random.choices([0, 1, 2], [0.7, 0.2, 0.1])[0]
         personal_loans = random.choices([0, 1], [0.9, 0.1])[0]
         gold_loans = random.choices([0, 1], [0.95, 0.05])[0]
         loan_top_up_indicator = np.random.binomial(1, 0.02)
-        
+
+        # ── CRS raw fields (gig-worker income pattern proxies) ────────────────
+        active_earning_days = int(np.clip(np.random.normal(24, 3), 18, 30))
+        avg_earning_gap_days = round(clipped_normal(1.5, 0.8, 0.5, 4.0), 2)
+        weekly_income_base = income / 4.33
+        min_weekly_income = round(weekly_income_base * clipped_normal(0.82, 0.08, 0.65, 0.98))
+        avg_weekly_income = round(weekly_income_base * clipped_normal(1.0, 0.05, 0.90, 1.10))
+        income_std = round(income * clipped_normal(0.06, 0.03, 0.01, 0.15))
+        income_sources = random.choices([1, 2, 3, 4], [0.45, 0.35, 0.15, 0.05])[0]
+
     elif profile == "vulnerable":
         income = random.randint(25000, 160000)
         emi_ratio = clipped_normal(0.36, 0.08, 0.18, 0.55)
@@ -68,13 +77,22 @@ def generate_customer(i):
         spending_change = clipped_normal(-0.06, 0.18, -0.45, 0.30)
         avg_balance_ratio = clipped_normal(1.0, 0.35, 0.25, 1.8)
         card_due_ratio = clipped_normal(0.25, 0.08, 0.08, 0.45)
-        
+
         # Loan structure
         secured_loans = random.choices([0, 1], [0.8, 0.2])[0]
         personal_loans = random.choices([1, 2, 3], [0.6, 0.3, 0.1])[0]
         gold_loans = random.choices([0, 1], [0.8, 0.2])[0]
         loan_top_up_indicator = np.random.binomial(1, 0.15)
-        
+
+        # ── CRS raw fields ────────────────────────────────────────────────────
+        active_earning_days = int(np.clip(np.random.normal(17, 4), 8, 26))
+        avg_earning_gap_days = round(clipped_normal(4.0, 1.5, 1.5, 9.0), 2)
+        weekly_income_base = income / 4.33
+        min_weekly_income = round(weekly_income_base * clipped_normal(0.55, 0.12, 0.30, 0.75))
+        avg_weekly_income = round(weekly_income_base * clipped_normal(0.95, 0.08, 0.80, 1.05))
+        income_std = round(income * clipped_normal(0.22, 0.07, 0.08, 0.40))
+        income_sources = random.choices([1, 2, 3], [0.55, 0.35, 0.10])[0]
+
     else:
         income = random.randint(18000, 120000)
         emi_ratio = clipped_normal(0.49, 0.10, 0.28, 0.70)
@@ -88,12 +106,21 @@ def generate_customer(i):
         spending_change = clipped_normal(-0.18, 0.20, -0.60, 0.22)
         avg_balance_ratio = clipped_normal(0.42, 0.18, 0.05, 0.95)
         card_due_ratio = clipped_normal(0.34, 0.10, 0.12, 0.60)
-        
+
         # Loan structure
         secured_loans = random.choices([0, 1], [0.9, 0.1])[0]
         personal_loans = random.choices([2, 3, 4, 5], [0.4, 0.3, 0.2, 0.1])[0]
         gold_loans = random.choices([0, 1, 2], [0.7, 0.2, 0.1])[0]
         loan_top_up_indicator = np.random.binomial(1, 0.35)
+
+        # ── CRS raw fields ────────────────────────────────────────────────────
+        active_earning_days = int(np.clip(np.random.normal(10, 4), 3, 20))
+        avg_earning_gap_days = round(clipped_normal(8.0, 2.5, 3.0, 15.0), 2)
+        weekly_income_base = income / 4.33
+        min_weekly_income = round(weekly_income_base * clipped_normal(0.28, 0.12, 0.05, 0.50))
+        avg_weekly_income = round(weekly_income_base * clipped_normal(0.85, 0.10, 0.65, 1.00))
+        income_std = round(income * clipped_normal(0.42, 0.10, 0.20, 0.65))
+        income_sources = random.choices([1, 2], [0.75, 0.25])[0]
 
     emi = max(2000, int(income * emi_ratio))
     credit_card_due = max(1000, int(income * card_due_ratio))
@@ -129,6 +156,13 @@ def generate_customer(i):
         "mf_liquidation_amount": random.randint(0, 5000) if profile == "stable" else random.randint(20000, 200000),
         "gold_loan_active": np.random.binomial(1, 0.05 if profile == "stable" else 0.35),
         "od_utilization_pct": round(random.uniform(0, 10) if profile == "stable" else random.uniform(40, 95), 2),
+        "active_earning_days": active_earning_days,
+        "total_days": 30,
+        "avg_earning_gap_days": avg_earning_gap_days,
+        "min_weekly_income": min_weekly_income,
+        "avg_weekly_income": avg_weekly_income,
+        "income_std": income_std,
+        "income_sources": income_sources,
     }
 
 

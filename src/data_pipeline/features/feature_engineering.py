@@ -65,6 +65,10 @@ def run_feature_engineering():
         + ((df["od_utilization_pct"] / 100) * 0.2)
     ).clip(0, 1)
 
+    # Cash Flow Reliability Score (CRS) Enrichment
+    from src.intelligence.cash_flow_reliability import batch_compute_crs
+    df = batch_compute_crs(df)
+
     df.to_csv(OUTPUT_PATH, index=False)
 
     print(f"✅ Advanced features created: {df.shape}")
